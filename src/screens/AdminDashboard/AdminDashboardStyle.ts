@@ -1,0 +1,90 @@
+import { StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/colors';
+
+export const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.offWhite },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 20,
+    backgroundColor: COLORS.navy,
+  },
+  greeting: { fontSize: 12, color: COLORS.gray400, letterSpacing: 1, textTransform: 'uppercase' },
+  name: { fontSize: 20, fontWeight: '700', color: COLORS.white, marginTop: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.gold + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(220,38,38,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 12,
+  },
+  statCard: {
+    width: '47%',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  statValue: { fontSize: 22, fontWeight: '700', color: COLORS.navy },
+  statLabel: { fontSize: 12, color: COLORS.gray500, marginTop: 4 },
+
+  section: { marginTop: 24, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy, marginBottom: 12 },
+  empty: { alignItems: 'center', paddingVertical: 20 },
+  emptyText: { color: COLORS.gray400, fontSize: 14 },
+
+  bookingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+  },
+  bookingInfo: { flex: 1 },
+  bookingRoom: { fontSize: 14, fontWeight: '600', color: COLORS.navy, marginBottom: 2 },
+  bookingDate: { fontSize: 12, color: COLORS.gray500, marginBottom: 2 },
+  bookingPrice: { fontSize: 13, color: COLORS.gold, fontWeight: '600' },
+
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginLeft: 8 },
+  statusText: { fontSize: 11, fontWeight: '700' },
+});

@@ -12,6 +12,7 @@ export const PLACEHOLDER_ACCOUNTS: StoredUser[] = [
     lastName: 'Doe',
     email: 'john@luxestay.com',
     password: 'password123',
+    role: 'guest',
   },
   {
     id: 'user_002',
@@ -19,11 +20,36 @@ export const PLACEHOLDER_ACCOUNTS: StoredUser[] = [
     lastName: 'Smith',
     email: 'jane@luxestay.com',
     password: 'password123',
+    role: 'guest',
+  },
+  {
+    id: 'admin_001',
+    firstName: 'Admin',
+    lastName: 'Hotel',
+    email: 'admin@hotel.com',
+    password: 'Admin123!',
+    role: 'admin',
   },
 ];
 
 // In-memory user store — replace with API calls when backend is ready
 let registeredUsers: StoredUser[] = [...PLACEHOLDER_ACCOUNTS];
+
+// Non-stub helpers
+export const getRegisteredUsersCount = (): number => registeredUsers.length;
+
+export const verifyPassword = (userId: string, password: string): boolean =>
+  registeredUsers.find(u => u.id === userId)?.password === password;
+
+export const checkEmailExists = (email: string, excludeUserId: string): boolean =>
+  registeredUsers.some(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== excludeUserId);
+
+export const updateStoredUser = (
+  userId: string,
+  updates: { firstName: string; lastName: string; email: string },
+): void => {
+  registeredUsers = registeredUsers.map(u => (u.id === userId ? { ...u, ...updates } : u));
+};
 
 // ─── Auth Service ─────────────────────────────────────────────────────────────
 export const authService = {
@@ -49,6 +75,7 @@ export const authService = {
       lastName,
       email,
       password,
+      role: 'guest',
     };
     registeredUsers.push(newUser);
     const { password: _, ...userWithoutPassword } = newUser;

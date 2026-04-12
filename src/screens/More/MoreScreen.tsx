@@ -54,6 +54,7 @@ export default function MoreScreen() {
     {
       groupLabel: 'ACCOUNT',
       items: [
+        { icon: 'person-outline', iconBg: '#e0f2fe', label: 'Edit Profile', onPress: () => navigation.navigate('EditProfile') },
         { icon: 'log-out-outline', iconBg: '#fce8e8', label: 'Log Out', onPress: handleLogout, danger: true },
       ],
     },

@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useBookings } from '../../context/BookingContext';
-import { PLACEHOLDER_ROOMS } from '../../data/placeholders';
+import { useRooms } from '../../context/RoomContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
 import styles from './styles';
@@ -15,8 +15,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const { user } = useAuth();
   const { bookings } = useBookings();
+  const { rooms } = useRooms();
   const navigation = useNavigation<Nav>();
-  const topRated = PLACEHOLDER_ROOMS.filter(r => r.isTopRated && r.isAvailable);
+  const topRated = rooms.filter(r => r.isTopRated && r.isAvailable);
   const myBookings = bookings.filter(b => b.userId === user?.id);
 
   return (
@@ -35,7 +36,7 @@ export default function HomeScreen() {
       {/* Stats bar */}
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
-          <Text style={styles.statNum}>{PLACEHOLDER_ROOMS.filter(r => r.isAvailable).length}</Text>
+          <Text style={styles.statNum}>{rooms.filter(r => r.isAvailable).length}</Text>
           <Text style={styles.statLabel}>Available</Text>
         </View>
         <View style={styles.statDivider} />
@@ -45,7 +46,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNum}>{PLACEHOLDER_ROOMS.length}</Text>
+          <Text style={styles.statNum}>{rooms.length}</Text>
           <Text style={styles.statLabel}>Total Rooms</Text>
         </View>
       </View>

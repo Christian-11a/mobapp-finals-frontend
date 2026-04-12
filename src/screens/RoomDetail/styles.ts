@@ -32,4 +32,64 @@ export default StyleSheet.create({
   button: { backgroundColor: COLORS.gold, margin: 20, marginTop: 12, padding: 16, borderRadius: 12, alignItems: 'center' },
   buttonDisabled: { backgroundColor: COLORS.gray300 },
   buttonText: { color: COLORS.white, fontWeight: 'bold', fontSize: 16 },
+  // Reviews section
+  reviewSection: { paddingHorizontal: 20, paddingTop: 0 },
+  reviewSectionTitle: { fontSize: 16, fontWeight: 'bold', color: COLORS.navy, marginBottom: 12 },
+  reviewCard: { backgroundColor: COLORS.white, borderRadius: 12, padding: 14, marginBottom: 10, elevation: 1 },
+  reviewStars: { flexDirection: 'row', gap: 3, marginBottom: 4 },
+  reviewUser: { fontSize: 13, fontWeight: '600', color: COLORS.navy },
+  reviewText: { fontSize: 13, color: COLORS.gray600, lineHeight: 20, marginTop: 6 },
+  reviewDate: { fontSize: 11, color: COLORS.gray400, marginTop: 4 },
+  reviewEmpty: { color: COLORS.gray400, fontSize: 13, textAlign: 'center', paddingVertical: 8 },
+
+  // Gallery dots
+  dotsRow: { position: 'absolute', bottom: 12, alignSelf: 'center', flexDirection: 'row', gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
+  dotActive: { backgroundColor: COLORS.white, width: 18 },
+
+  // Guest count selector
+  guestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: COLORS.white, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.gray200 },
+  guestLabel: { fontSize: 14, fontWeight: '600', color: COLORS.navy },
+  guestControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  guestBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.gray100, alignItems: 'center', justifyContent: 'center' },
+  guestBtnDisabled: { backgroundColor: COLORS.gray100, opacity: 0.5 },
+  guestCount: { fontSize: 18, fontWeight: 'bold', color: COLORS.navy, minWidth: 24, textAlign: 'center' },
+  // Picker Styles
+  pickerHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray100,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  pickerDone: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.gold,
+  },
+  conflictWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.redLight,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  conflictText: {
+    fontSize: 13,
+    color: COLORS.red,
+    fontWeight: '500',
+  },
 });

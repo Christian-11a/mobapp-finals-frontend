@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-  FlatList, Image, Text, TextInput, TouchableOpacity,
+  FlatList, Image, RefreshControl, Text, TextInput, TouchableOpacity,
   View, ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { PLACEHOLDER_ROOMS } from '../../data/placeholders';
+import { useRooms } from '../../context/RoomContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
 import styles from './styles';
@@ -18,22 +18,30 @@ const TYPES = ['All', 'Single', 'Double', 'Suite', 'Family', 'Exclusive'];
 
 export default function RoomsScreen() {
   const navigation = useNavigation<Nav>();
+  const { rooms } = useRooms();
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [maxPriceIndex, setMaxPriceIndex] = useState(PRICE_STEPS.length - 1);
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const maxPrice = PRICE_STEPS[maxPriceIndex];
+  const isFilterActive = selectedType !== 'All' || maxPriceIndex !== PRICE_STEPS.length - 1;
 
   const filtered = useMemo(() => {
-    return PLACEHOLDER_ROOMS.filter(r => {
+    return rooms.filter(r => {
       const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) ||
         r.type.toLowerCase().includes(search.toLowerCase());
       const matchType = selectedType === 'All' || r.type === selectedType;
       const matchPrice = r.pricePerNight <= maxPrice;
       return matchSearch && matchType && matchPrice;
     });
-  }, [search, selectedType, maxPrice]);
+  }, [rooms, search, selectedType, maxPrice]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 600);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -59,13 +67,13 @@ export default function RoomsScreen() {
           )}
           <TouchableOpacity onPress={() => setShowFilters(p => !p)} style={styles.filterBtn}>
             <Ionicons name="options-outline" size={20} color={showFilters ? COLORS.gold : COLORS.white} />
+            {isFilterActive && <View style={styles.filterBadge} />}
           </TouchableOpacity>
         </View>
 
         {/* Filters */}
         {showFilters && (
           <View style={styles.filters}>
-            {/* Type filter */}
             <Text style={styles.filterLabel}>Room Type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
               {TYPES.map(t => (
@@ -79,7 +87,6 @@ export default function RoomsScreen() {
               ))}
             </ScrollView>
 
-            {/* Price range */}
             <Text style={styles.filterLabel}>
               Max Price: <Text style={styles.filterValue}>${maxPrice}/night</Text>
             </Text>
@@ -105,9 +112,10 @@ export default function RoomsScreen() {
         data={filtered}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.gold} colors={[COLORS.gold]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🔍</Text>
+            <Ionicons name="search-outline" size={48} color={COLORS.gray300} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyTitle}>No rooms found</Text>
             <Text style={styles.emptyText}>Try adjusting your search or filters</Text>
           </View>

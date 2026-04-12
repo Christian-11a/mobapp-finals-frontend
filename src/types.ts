@@ -23,6 +23,18 @@ export interface UserType {
   email: string;
   firstName: string;
   lastName: string;
+  role: 'guest' | 'admin';
+}
+
+export interface Review {
+  id: string;
+  bookingId: string;
+  userId: string;
+  roomId: string;
+  rating: number; // 1–5
+  text: string;
+  createdAt: string;
+  userName: string;
 }
 
 export interface Booking {
@@ -34,7 +46,7 @@ export interface Booking {
   totalGuests: number;
   totalPrice: number;
   cancellationFee?: number;
-  status: 'Pending' | 'Confirmed' | 'Cancelled';
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
   bookedAt: string;
 }
 
@@ -42,8 +54,11 @@ export type RootStackParamList = {
   SignIn: undefined;
   Register: undefined;
   MainTabs: undefined;
+  AdminTabs: undefined;
   RoomDetail: { roomId: string };
   BookingDetail: { bookingId: string };
+  BookingSuccess: { bookingId: string };
+  EditProfile: undefined;
   AboutUs: undefined;
   FAQ: undefined;
   Policies: undefined;
@@ -54,4 +69,11 @@ export type MainTabParamList = {
   Rooms: undefined;
   MyBookings: undefined;
   More: undefined;
+};
+
+export type AdminTabParamList = {
+  Dashboard: undefined;
+  AdminRooms: undefined;
+  AdminBookings: undefined;
+  AdminReviews: undefined;
 };
