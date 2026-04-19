@@ -64,6 +64,27 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.mainContainer}>
+      {/* Sticky Back Button */}
+      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color={COLORS.navy} />
+      </TouchableOpacity>
+
+      {/* Sticky Top-Right Buttons */}
+      <View style={styles.topRightBtns}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => showToast('Sharing feature coming soon!', 'info', 'bottom')}>
+          <Ionicons name="share-social-outline" size={22} color={COLORS.navy} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={toggleSave}>
+          <Ionicons 
+            name={isSaved ? "heart" : "heart-outline"} 
+            size={22} 
+            color={isSaved ? COLORS.red : COLORS.navy} 
+          />
+        </TouchableOpacity>  
+      </View>
+
+      <View style={styles.imageOverlay} pointerEvents="none" />
+      
       <ScrollView ref={scrollViewRef} style={styles.scrollContainer} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         
         {/* Image Gallery */}
@@ -80,24 +101,6 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
               <Image source={{ uri: item.url }} style={[styles.image, { width: SCREEN_WIDTH }]} />
             )}
           />
-          <View style={styles.imageOverlay} pointerEvents="none" />
-          
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.navy} />
-          </TouchableOpacity>
-
-          <View style={styles.topRightBtns}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => showToast('Sharing feature coming soon!', 'info', 'bottom')}>
-              <Ionicons name="share-social-outline" size={22} color={COLORS.navy} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={toggleSave}>
-              <Ionicons 
-                name={isSaved ? "heart" : "heart-outline"} 
-                size={22} 
-                color={isSaved ? COLORS.red : COLORS.navy} 
-              />
-            </TouchableOpacity>
-          </View>
 
           {allPhotos.length > 1 && (
             <View style={styles.dotsRow}>

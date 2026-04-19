@@ -24,8 +24,9 @@ export default StyleSheet.create({
     right: 0,
     height: 100,
     backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 9 ,
   },
-  backBtn: {
+backBtn: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 56 : 40,
     left: 20,
@@ -35,6 +36,7 @@ export default StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   topRightBtns: {
     position: 'absolute',
@@ -42,6 +44,7 @@ export default StyleSheet.create({
     right: 20,
     flexDirection: 'row',
     gap: 8,
+    zIndex: 10,
   },
   iconBtn: {
     width: 40,
