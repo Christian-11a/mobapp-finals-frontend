@@ -11,24 +11,36 @@ export const PLACEHOLDER_ACCOUNTS: StoredUser[] = [
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@luxestay.com',
+    phoneNumber: '09123456789',
     password: 'password123',
     role: 'guest',
+    paymentMethods: [
+      { id: 'm_001', type: 'card', label: '•••• 4242', isDefault: true, provider: 'Visa' },
+      { id: 'm_002', type: 'gcash', label: '0912***6789', isDefault: false }
+    ],
+    savedRoomIds: ['room_001', 'room_003']
   },
   {
     id: 'user_002',
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jane@luxestay.com',
+    phoneNumber: '09123456790',
     password: 'password123',
     role: 'guest',
+    paymentMethods: [],
+    savedRoomIds: []
   },
   {
     id: 'admin_001',
     firstName: 'Admin',
     lastName: 'Hotel',
     email: 'admin@hotel.com',
+    phoneNumber: '09123456791',
     password: 'Admin123!',
     role: 'admin',
+    paymentMethods: [],
+    savedRoomIds: []
   },
 ];
 
@@ -46,9 +58,13 @@ export const checkEmailExists = (email: string, excludeUserId: string): boolean 
 
 export const updateStoredUser = (
   userId: string,
-  updates: { firstName: string; lastName: string; email: string },
+  updates: Partial<UserType>,
 ): void => {
   registeredUsers = registeredUsers.map(u => (u.id === userId ? { ...u, ...updates } : u));
+};
+
+export const deleteStoredUser = (userId: string): void => {
+  registeredUsers = registeredUsers.filter(u => u.id !== userId);
 };
 
 // ─── Auth Service ─────────────────────────────────────────────────────────────
@@ -65,7 +81,7 @@ export const authService = {
   },
 
   // TODO: replace with → POST /api/auth/register
-  register: async (firstName: string, lastName: string, email: string, password: string): Promise<UserType> => {
+  register: async (firstName: string, lastName: string, email: string, password: string, phoneNumber?: string): Promise<UserType> => {
     await new Promise(r => setTimeout(r, 600));
     const exists = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (exists) throw new Error('An account with this email already exists.');
@@ -74,8 +90,15 @@ export const authService = {
       firstName,
       lastName,
       email,
+      phoneNumber: phoneNumber || '',
       password,
       role: 'guest',
+      paymentMethods: [],
+      notificationSettings: {
+        push: { bookings: true, promos: true, account: true },
+        email: { newsletters: false, billing: true }
+      },
+      savedRoomIds: []
     };
     registeredUsers.push(newUser);
     const { password: _, ...userWithoutPassword } = newUser;

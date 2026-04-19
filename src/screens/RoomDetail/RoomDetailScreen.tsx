@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../types';
 import { useRooms } from '../../context/RoomContext';
 import { useBookings } from '../../context/BookingContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
 import styles from './styles';
 
@@ -24,6 +26,23 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
   const { rooms } = useRooms();
   const room = rooms.find(r => r.id === roomId);
   const { reviews } = useBookings();
+  const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
+
+  const savedIds = user?.savedRoomIds || [];
+  const isSaved = savedIds.includes(roomId);
+
+  const toggleSave = () => {
+    let newIds: string[];
+    if (isSaved) {
+      newIds = savedIds.filter(id => id !== roomId);
+      showToast('Room removed from wishlist', 'info', 'bottom');
+    } else {
+      newIds = [...savedIds, roomId];
+      showToast('Room saved to wishlist!', 'success', 'bottom');
+    }
+    updateUser({ savedRoomIds: newIds });
+  };
 
   const scrollViewRef = useRef<ScrollView>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -68,11 +87,15 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
           </TouchableOpacity>
 
           <View style={styles.topRightBtns}>
-            <TouchableOpacity style={styles.iconBtn}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => showToast('Sharing feature coming soon!', 'info', 'bottom')}>
               <Ionicons name="share-social-outline" size={22} color={COLORS.navy} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Ionicons name="heart-outline" size={22} color={COLORS.navy} />
+            <TouchableOpacity style={styles.iconBtn} onPress={toggleSave}>
+              <Ionicons 
+                name={isSaved ? "heart" : "heart-outline"} 
+                size={22} 
+                color={isSaved ? COLORS.red : COLORS.navy} 
+              />
             </TouchableOpacity>
           </View>
 

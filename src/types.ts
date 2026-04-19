@@ -18,12 +18,45 @@ export interface Room {
   isTopRated?: boolean;
 }
 
+export interface PaymentMethod {
+  id: string;
+  type: 'card' | 'gcash' | 'maya';
+  label: string; // e.g. "•••• 4242" or "0917***8888"
+  isDefault: boolean;
+  provider?: string; // "Visa", "Mastercard", etc.
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'booking' | 'account' | 'promo';
+  createdAt: string;
+  isRead: boolean;
+}
+
+export interface NotificationSettings {
+  push: {
+    bookings: boolean;
+    promos: boolean;
+    account: boolean;
+  };
+  email: {
+    newsletters: boolean;
+    billing: boolean;
+  };
+}
+
 export interface UserType {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
   role: 'guest' | 'admin';
+  paymentMethods?: PaymentMethod[];
+  notificationSettings?: NotificationSettings;
+  savedRoomIds?: string[];
 }
 
 export interface Review {
@@ -92,6 +125,11 @@ export type RootStackParamList = {
   BookingDetail: { bookingId: string; action?: 'edit' | 'cancel' };
   BookingSuccess: { bookingId: string };
   EditProfile: undefined;
+  Security: undefined;
+  PaymentMethods: undefined;
+  Notifications: undefined;
+  NotificationSettings: undefined;
+  SavedRooms: undefined;
   AboutUs: undefined;
   FAQ: undefined;
   Policies: undefined;

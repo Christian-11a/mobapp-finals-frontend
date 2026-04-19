@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { verifyPassword, checkEmailExists, updateStoredUser } from '../../services/authService';
-import { validateFirstName, validateLastName, validateEmail } from '../../utils/validation';
+import { validateFirstName, validateLastName, validateEmail, validatePhone } from '../../utils/validation';
 import { VALIDATION } from '../../constants';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
@@ -20,30 +20,40 @@ export default function EditProfileScreen({ navigation }: Props) {
   const [firstName, setFirstName] = useState(user?.firstName ?? '');
   const [lastName, setLastName] = useState(user?.lastName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
+  const [phone, setPhone] = useState(user?.phoneNumber ?? '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   const setErr = (k: string, v?: string) =>
     setErrors(prev => ({ ...prev, [k]: v ?? '' }));
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
+    
     const fnErr = validateFirstName(firstName);
     if (fnErr) errs.firstName = fnErr;
+    
     const lnErr = validateLastName(lastName);
     if (lnErr) errs.lastName = lnErr;
+    
     const emErr = validateEmail(email);
     if (emErr) errs.email = emErr;
+
+    const phErr = validatePhone(phone);
+    if (phErr) errs.phone = phErr;
+    
     if (!currentPassword) errs.currentPassword = VALIDATION.PASSWORD_REQUIRED;
+    
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSave = () => {
     if (!validate()) {
-      showToast('Please fix the errors before saving.', 'error');
+      showToast('Please check the highlighted fields to continue.', 'info');
       return;
     }
     if (!verifyPassword(user!.id, currentPassword)) {
@@ -56,80 +66,111 @@ export default function EditProfileScreen({ navigation }: Props) {
       showToast(VALIDATION.DUPLICATE_EMAIL, 'error');
       return;
     }
-    updateStoredUser(user!.id, { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
-    updateUser({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
+
+    const updatedData = { 
+      firstName: firstName.trim(), 
+      lastName: lastName.trim(), 
+      email: email.trim(),
+      phoneNumber: phone.trim()
+    };
+
+    updateStoredUser(user!.id, updatedData);
+    updateUser(updatedData);
     showToast(VALIDATION.PROFILE_UPDATED, 'success');
     navigation.goBack();
   };
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.label}>First Name</Text>
-        <TextInput
-          style={[styles.input, errors.firstName && styles.inputError]}
-          value={firstName}
-          onChangeText={v => { setFirstName(v); setErr('firstName'); }}
-          placeholder="First name"
-          placeholderTextColor={COLORS.gray400}
+  const renderInput = (
+    label: string, 
+    value: string, 
+    onChange: (t: string) => void, 
+    icon: any, 
+    errorKey: string,
+    placeholder: string,
+    keyboardType: any = 'default',
+    secure: boolean = false,
+    showToggle: boolean = false
+  ) => (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[
+        styles.inputContainer, 
+        errors[errorKey] ? styles.inputError : null,
+        activeField === errorKey ? styles.inputActive : null
+      ]}>
+        <Ionicons 
+          name={icon} 
+          size={20} 
+          color={errors[errorKey] ? COLORS.red : (activeField === errorKey ? COLORS.gold : COLORS.gray400)} 
+          style={styles.icon} 
         />
-        {!!errors.firstName && <Text style={styles.error}>{errors.firstName}</Text>}
-
-        <Text style={styles.label}>Last Name</Text>
         <TextInput
-          style={[styles.input, errors.lastName && styles.inputError]}
-          value={lastName}
-          onChangeText={v => { setLastName(v); setErr('lastName'); }}
-          placeholder="Last name"
-          placeholderTextColor={COLORS.gray400}
+          style={styles.input}
+          value={value}
+          onChangeText={t => { onChange(t); setErr(errorKey); }}
+          onFocus={() => setActiveField(errorKey)}
+          onBlur={() => setActiveField(null)}
+          placeholder={placeholder}
+          placeholderTextColor="rgba(10, 30, 61, 0.3)"
+          keyboardType={keyboardType}
+          secureTextEntry={secure}
+          autoCapitalize={errorKey === 'email' ? 'none' : 'words'}
         />
-        {!!errors.lastName && <Text style={styles.error}>{errors.lastName}</Text>}
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={[styles.input, errors.email && styles.inputError]}
-          value={email}
-          onChangeText={v => { setEmail(v); setErr('email'); }}
-          placeholder="Email address"
-          placeholderTextColor={COLORS.gray400}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        {!!errors.email && <Text style={styles.error}>{errors.email}</Text>}
-
-        <View style={styles.divider} />
-        <Text style={styles.noteText}>Enter your current password to save changes.</Text>
-
-        <Text style={styles.label}>Current Password</Text>
-        <View style={{ position: 'relative' }}>
-          <TextInput
-            style={[styles.input, errors.currentPassword && styles.inputError, { paddingRight: 44 }]}
-            value={currentPassword}
-            onChangeText={v => { setCurrentPassword(v); setErr('currentPassword'); }}
-            placeholder="Current password"
-            placeholderTextColor={COLORS.gray400}
-            secureTextEntry={!showPass}
-          />
-          <TouchableOpacity
-            style={{ position: 'absolute', right: 14, top: 13 }}
-            onPress={() => setShowPass(p => !p)}
-          >
+        {showToggle && (
+          <TouchableOpacity onPress={() => setShowPass(!showPass)}>
             <Ionicons name={showPass ? 'eye-off-outline' : 'eye-outline'} size={20} color={COLORS.gray400} />
           </TouchableOpacity>
-        </View>
-        {!!errors.currentPassword && <Text style={styles.error}>{errors.currentPassword}</Text>}
-
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>Save Changes</Text>
-        </TouchableOpacity>
+        )}
       </View>
-    </ScrollView>
+      {!!errors[errorKey] && <Text style={styles.errorText}>{errors[errorKey]}</Text>}
+    </View>
+  );
+
+  return (
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
+        <StatusBar barStyle="light-content" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerCircle1} />
+          <View style={styles.headerCircle2} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Personal Info</Text>
+          </View>
+        </View>
+
+        <View style={styles.body}>
+          <Text style={styles.sectionTitle}>Basic Information</Text>
+          <View style={styles.card}>
+            {renderInput('First Name', firstName, setFirstName, 'person-outline', 'firstName', 'Enter your first name')}
+            {renderInput('Last Name', lastName, setLastName, 'person-outline', 'lastName', 'Enter your last name')}
+            {renderInput('Email Address', email, setEmail, 'mail-outline', 'email', 'your@email.com', 'email-address')}
+            {renderInput('Phone Number', phone, setPhone, 'call-outline', 'phone', '09123456789', 'phone-pad')}
+          </View>
+
+          <Text style={styles.sectionTitle}>Security Verification</Text>
+          <View style={styles.card}>
+            <View style={styles.noteContainer}>
+              <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.gold} />
+              <Text style={styles.noteText}>To protect your account, please enter your current password to confirm these changes.</Text>
+            </View>
+            {renderInput('Current Password', currentPassword, setCurrentPassword, 'lock-closed-outline', 'currentPassword', '••••••••', 'default', !showPass, true)}
+          </View>
+
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+            <Text style={styles.saveBtnText}>Save All Changes</Text>
+          </TouchableOpacity>
+          
+          <View style={{ height: 40 }} />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

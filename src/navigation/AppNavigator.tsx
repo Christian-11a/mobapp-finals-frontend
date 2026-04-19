@@ -22,6 +22,11 @@ import MoreScreen from '../screens/More/MoreScreen';
 import AboutUsScreen from '../screens/AboutUs/AboutUsScreen';
 import FAQScreen from '../screens/FAQ/FAQScreen';
 import PoliciesScreen from '../screens/Policies/PoliciesScreen';
+import SecurityScreen from '../screens/Security/SecurityScreen';
+import PaymentMethodsScreen from '../screens/PaymentMethods/PaymentMethodsScreen';
+import NotificationsScreen from '../screens/Notifications/NotificationsScreen';
+import NotificationSettingsScreen from '../screens/Notifications/NotificationSettingsScreen';
+import SavedRoomsScreen from '../screens/SavedRooms/SavedRoomsScreen';
 import AdminNavigator from './AdminNavigator';
 import EditProfileScreen from '../screens/EditProfile/EditProfileScreen';
 import BookingSuccessScreen from '../screens/BookingSuccess/BookingSuccessScreen';
@@ -82,6 +87,9 @@ export default function AppNavigator() {
             <Stack.Screen name="Landing" component={LandingScreen} />
             <Stack.Screen name="SignIn" component={SignInScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+            <Stack.Screen name="FAQ" component={FAQScreen} />
+            <Stack.Screen name="Policies" component={PoliciesScreen} />
           </>
         ) : isAdmin ? (
           <Stack.Screen name="AdminTabs" component={AdminNavigator} />
@@ -95,6 +103,11 @@ export default function AppNavigator() {
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
+            <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+            <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
             <Stack.Screen name="FAQ" component={FAQScreen} />
             <Stack.Screen name="Policies" component={PoliciesScreen} />

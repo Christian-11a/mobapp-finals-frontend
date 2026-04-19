@@ -40,6 +40,12 @@ export const validateLastName = (value: string): string | null => {
   return null;
 };
 
+export const validatePhone = (value: string): string | null => {
+  if (!value.trim()) return VALIDATION.PHONE_REQUIRED;
+  if (!/^09\d{9}$/.test(value.trim())) return VALIDATION.PHONE_INVALID;
+  return null;
+};
+
 export const validateCheckInDate = (value: string): string | null => {
   if (!value) return VALIDATION.CHECK_IN_REQUIRED;
   const today = new Date();

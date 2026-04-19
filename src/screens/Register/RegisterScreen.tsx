@@ -10,13 +10,22 @@ import { RootStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { authService } from '../../services/authService';
+import { 
+  validateFirstName, 
+  validateLastName, 
+  validateEmail, 
+  validatePhone, 
+  validateRegisterPassword, 
+  validateConfirmPassword 
+} from '../../utils/validation';
 import { COLORS } from '../../constants/colors';
 import styles from './styles';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Register'> };
 
 export default function RegisterScreen({ navigation }: Props) {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -25,33 +34,53 @@ export default function RegisterScreen({ navigation }: Props) {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  
   const { login } = useAuth();
   const { showToast } = useToast();
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!fullName.trim()) e.fullName = 'Full name is required';
-    if (!email.trim()) e.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Enter a valid email';
-    if (!password) e.password = 'Password is required';
-    else if (password.length < 6) e.password = 'Minimum 6 characters';
-    if (!confirmPassword) e.confirmPassword = 'Please confirm your password';
-    else if (password !== confirmPassword) e.confirmPassword = 'Passwords do not match';
+    
+    const fnErr = validateFirstName(firstName);
+    if (fnErr) e.firstName = fnErr;
+
+    const lnErr = validateLastName(lastName);
+    if (lnErr) e.lastName = lnErr;
+
+    const emErr = validateEmail(email);
+    if (emErr) e.email = emErr;
+
+    if (phone.trim()) {
+      const phErr = validatePhone(phone);
+      if (phErr) e.phone = phErr;
+    }
+
+    const pwErr = validateRegisterPassword(password);
+    if (pwErr) e.password = pwErr;
+
+    const cpwErr = validateConfirmPassword(password, confirmPassword);
+    if (cpwErr) e.confirmPassword = cpwErr;
+
     if (!agreeTerms) e.terms = 'Please agree to our terms';
+    
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleRegister = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      showToast('Please check the highlighted fields to continue.', 'info');
+      return;
+    }
     setLoading(true);
     try {
-      // Splitting fullName for existing service compatibility
-      const names = fullName.trim().split(' ');
-      const firstName = names[0];
-      const lastName = names.length > 1 ? names.slice(1).join(' ') : '-';
-      
-      const user = await authService.register(firstName, lastName, email.trim(), password);
+      const user = await authService.register(
+        firstName.trim(), 
+        lastName.trim(), 
+        email.trim(), 
+        password,
+        phone.trim() || undefined
+      );
       login(user);
       showToast(`Welcome to LuxeStay, ${user.firstName}!`, 'success');
     } catch (err: any) {
@@ -96,19 +125,38 @@ export default function RegisterScreen({ navigation }: Props) {
           bounces={false}
         >
           <View style={styles.formSection}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Full Name</Text>
-              <View style={[styles.inputContainer, errors.fullName ? styles.inputError : null]}>
-                <Ionicons name="person-outline" size={18} color="rgba(10, 30, 61, 0.4)" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="John Doe"
-                  placeholderTextColor="rgba(10, 30, 61, 0.3)"
-                  value={fullName}
-                  onChangeText={t => { setFullName(t); setErrors(p => ({ ...p, fullName: undefined })); }}
-                />
+            <View style={styles.nameRow}>
+              <View style={[styles.fieldGroup, { flex: 1 }]}>
+                <Text style={styles.label}>First Name</Text>
+                <View style={[styles.inputContainer, errors.firstName ? styles.inputError : null]}>
+                  <Ionicons name="person-outline" size={18} color="rgba(10, 30, 61, 0.4)" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="John"
+                    placeholderTextColor="rgba(10, 30, 61, 0.3)"
+                    value={firstName}
+                    onChangeText={t => { setFirstName(t); setErrors(p => ({ ...p, firstName: undefined })); }}
+                    autoCapitalize="words"
+                  />
+                </View>
+                {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
               </View>
-              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+
+              <View style={[styles.fieldGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Last Name</Text>
+                <View style={[styles.inputContainer, errors.lastName ? styles.inputError : null]}>
+                  <Ionicons name="person-outline" size={18} color="rgba(10, 30, 61, 0.4)" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Doe"
+                    placeholderTextColor="rgba(10, 30, 61, 0.3)"
+                    value={lastName}
+                    onChangeText={t => { setLastName(t); setErrors(p => ({ ...p, lastName: undefined })); }}
+                    autoCapitalize="words"
+                  />
+                </View>
+                {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+              </View>
             </View>
 
             <View style={styles.fieldGroup}>
@@ -131,19 +179,21 @@ export default function RegisterScreen({ navigation }: Props) {
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Phone Number</Text>
-                <Text style={styles.optionalText}>Optional</Text>
+                <Text style={styles.optionalText}>Optional (09XXXXXXXXX)</Text>
               </View>
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer, errors.phone ? styles.inputError : null]}>
                 <Ionicons name="call-outline" size={18} color="rgba(10, 30, 61, 0.4)" />
                 <TextInput
                   style={styles.input}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="09XXXXXXXXX"
                   placeholderTextColor="rgba(10, 30, 61, 0.3)"
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={t => { setPhone(t); setErrors(p => ({ ...p, phone: undefined })); }}
                   keyboardType="phone-pad"
+                  maxLength={11}
                 />
               </View>
+              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -152,7 +202,7 @@ export default function RegisterScreen({ navigation }: Props) {
                 <Ionicons name="lock-closed-outline" size={18} color="rgba(10, 30, 61, 0.4)" />
                 <TextInput
                   style={styles.input}
-                  placeholder="Minimum 6 characters"
+                  placeholder="At least 8 characters"
                   placeholderTextColor="rgba(10, 30, 61, 0.3)"
                   value={password}
                   onChangeText={t => { setPassword(t); setErrors(p => ({ ...p, password: undefined })); }}
@@ -189,7 +239,14 @@ export default function RegisterScreen({ navigation }: Props) {
                 {agreeTerms && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
               </View>
               <Text style={styles.termsText}>
-                I agree to LuxeStay's <Text style={styles.termsBold}>Terms of Service</Text> and <Text style={styles.termsBold}>Privacy Policy</Text>
+                I agree to LuxeStay's{' '}
+                <Text style={styles.termsBold} onPress={() => navigation.navigate('Policies')}>
+                  Terms of Service
+                </Text>{' '}
+                and{' '}
+                <Text style={styles.termsBold} onPress={() => navigation.navigate('Policies')}>
+                  Privacy Policy
+                </Text>
               </Text>
             </TouchableOpacity>
             {errors.terms && <Text style={styles.errorText}>{errors.terms}</Text>}

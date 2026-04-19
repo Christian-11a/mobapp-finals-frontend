@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StatusBar, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
@@ -21,56 +21,68 @@ export default function FAQScreen() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>FAQ</Text>
-          <Text style={styles.headerSubtitle}>Frequently asked questions</Text>
-        </View>
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.intro}>
-          Can't find what you're looking for? Contact us at{' '}
-          <Text style={styles.introLink}>support@luxestay.com</Text>
-        </Text>
-
-        {FAQS.map((faq, idx) => {
-          const isOpen = openIdx === idx;
-          return (
-            <View key={idx} style={[styles.item, isOpen && styles.itemOpen]}>
-              <TouchableOpacity
-                style={styles.questionRow}
-                onPress={() => setOpenIdx(isOpen ? null : idx)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.questionLeft}>
-                  <View style={styles.qNumber}>
-                    <Text style={styles.qNumberText}>{idx + 1}</Text>
-                  </View>
-                  <Text style={styles.questionText}>{faq.q}</Text>
-                </View>
-                <Ionicons
-                  name={isOpen ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color={isOpen ? COLORS.gold : COLORS.gray400}
-                />
-              </TouchableOpacity>
-              {isOpen && (
-                <View style={styles.answerWrap}>
-                  <Text style={styles.answerText}>{faq.a}</Text>
-                </View>
-              )}
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
+        {/* Header with Decorative Circles */}
+        <View style={styles.header}>
+          <View style={styles.headerCircle1} />
+          <View style={styles.headerCircle2} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+            </TouchableOpacity>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>FAQ</Text>
+              <Text style={styles.headerSubtitle}>Frequently asked questions</Text>
             </View>
-          );
-        })}
-      </View>
+          </View>
+        </View>
 
-      <View style={{ height: 32 }} />
-    </ScrollView>
+        <View style={styles.body}>
+          <Text style={styles.intro}>
+            Can't find what you're looking for? Contact us at{' '}
+            <Text 
+              style={styles.introLink} 
+              onPress={() => Linking.openURL('mailto:support@luxestay.com')}
+            >
+              support@luxestay.com
+            </Text>
+          </Text>
+
+          {FAQS.map((faq, idx) => {
+            const isOpen = openIdx === idx;
+            return (
+              <View key={idx} style={[styles.item, isOpen && styles.itemOpen]}>
+                <TouchableOpacity
+                  style={styles.questionRow}
+                  onPress={() => setOpenIdx(isOpen ? null : idx)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.questionLeft}>
+                    <View style={styles.qNumber}>
+                      <Text style={styles.qNumberText}>{idx + 1}</Text>
+                    </View>
+                    <Text style={styles.questionText}>{faq.q}</Text>
+                  </View>
+                  <Ionicons
+                    name={isOpen ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={isOpen ? COLORS.gold : COLORS.gray400}
+                  />
+                </TouchableOpacity>
+                {isOpen && (
+                  <View style={styles.answerWrap}>
+                    <Text style={styles.answerText}>{faq.a}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }

@@ -62,6 +62,11 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
     gap: 20,
+    paddingBottom: 40,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   fieldGroup: {
     gap: 8,

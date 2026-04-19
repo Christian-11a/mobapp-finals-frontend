@@ -8,6 +8,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRooms } from '../../context/RoomContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
 import styles from './styles';
@@ -24,15 +26,16 @@ const PRICE_RANGES = [
 const SORT_OPTIONS = ['Rating', 'Price', 'Name'];
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { rooms } = useRooms();
+  const { unreadCount } = useNotifications();
+  const { showToast } = useToast();
   const navigation = useNavigation<Nav>();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterVisible, setIsFilterVisible] = useState(false);
-  
-  // Filter States
+
   const [tempPriceRange, setTempPriceRange] = useState(PRICE_RANGES[0]);
   const [tempSortBy, setTempSortBy] = useState('Rating');
   const [tempAvailableOnly, setTempAvailableOnly] = useState(false);
@@ -40,6 +43,21 @@ export default function HomeScreen() {
   const [activePriceRange, setActivePriceRange] = useState(PRICE_RANGES[0]);
   const [activeSortBy, setActiveSortBy] = useState('Rating');
   const [activeAvailableOnly, setActiveAvailableOnly] = useState(false);
+
+  const savedIds = user?.savedRoomIds || [];
+
+  const toggleSave = (roomId: string) => {
+    const isSaved = savedIds.includes(roomId);
+    let newIds: string[];
+    if (isSaved) {
+      newIds = savedIds.filter(id => id !== roomId);
+      showToast('Room removed from wishlist', 'info', 'bottom');
+    } else {
+      newIds = [...savedIds, roomId];
+      showToast('Room saved to wishlist!', 'success', 'bottom');
+    }
+    updateUser({ savedRoomIds: newIds });
+  };
 
   const filteredRooms = useMemo(() => {
     let result = rooms.filter(r => {
@@ -92,8 +110,20 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Hello, {user?.firstName || 'Guest'} 👋</Text>
             <Text style={styles.welcomeText}>Find Your Stay</Text>
           </View>
-          <TouchableOpacity style={styles.notificationBtn}>
+          <TouchableOpacity 
+            style={styles.notificationBtn}
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <Ionicons name="notifications-outline" size={22} color={COLORS.white} />
+            {unreadCount > 0 && (
+              <View style={{ 
+                position: 'absolute', top: -2, right: -2, backgroundColor: COLORS.gold, 
+                borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center',
+                borderWidth: 1.5, borderColor: COLORS.navy
+              }}>
+                <Text style={{ color: COLORS.navy, fontSize: 9, fontWeight: '800' }}>{unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -156,6 +186,16 @@ export default function HomeScreen() {
                   onPress={() => navigation.navigate('RoomDetail', { roomId: room.id })}
                 >
                   <Image source={{ uri: room.thumbnailPic?.url }} style={styles.featuredImage} />
+                  <TouchableOpacity 
+                    style={styles.heartBtn}
+                    onPress={() => toggleSave(room.id)}
+                  >
+                    <Ionicons 
+                      name={savedIds.includes(room.id) ? "heart" : "heart-outline"} 
+                      size={18} 
+                      color={savedIds.includes(room.id) ? COLORS.red : COLORS.gray400} 
+                    />
+                  </TouchableOpacity>
                   <View style={styles.priceBadge}>
                     <Text style={styles.priceText}>${room.pricePerNight}</Text>
                   </View>
@@ -195,7 +235,19 @@ export default function HomeScreen() {
               style={styles.roomCard}
               onPress={() => navigation.navigate('RoomDetail', { roomId: room.id })}
             >
-              <Image source={{ uri: room.thumbnailPic?.url }} style={styles.roomImage} />
+              <View>
+                <Image source={{ uri: room.thumbnailPic?.url }} style={styles.roomImage} />
+                <TouchableOpacity 
+                  style={[styles.heartBtn, { top: 6, left: 6, width: 28, height: 28 }]}
+                  onPress={() => toggleSave(room.id)}
+                >
+                  <Ionicons 
+                    name={savedIds.includes(room.id) ? "heart" : "heart-outline"} 
+                    size={16} 
+                    color={savedIds.includes(room.id) ? COLORS.red : COLORS.gray400} 
+                  />
+                </TouchableOpacity>
+              </View>
               <View style={styles.roomInfo}>
                 <View style={styles.roomHeader}>
                   <Text style={styles.roomType}>{room.type}</Text>

@@ -25,6 +25,8 @@ export const VALIDATION = {
   FIRST_NAME_MIN: 'First name must be at least 2 characters.',
   LAST_NAME_REQUIRED: 'Last name is required.',
   LAST_NAME_MIN: 'Last name must be at least 2 characters.',
+  PHONE_REQUIRED: 'Phone number is required.',
+  PHONE_INVALID: 'Enter a valid PH mobile number (e.g., 09123456789).',
 
   // Dates
   CHECK_IN_REQUIRED: 'Check-in date is required.',

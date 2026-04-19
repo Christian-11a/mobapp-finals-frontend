@@ -130,22 +130,38 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 15,
+    elevation: 4,
+    },
+    heartBtn: {
+    position: 'absolute',
+    top: 12,
+    left: 12, // Moved to left to avoid price badge on right
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
-  },
-  featuredImage: {
+    },
+    featuredImage: {
     width: '100%',
     height: 180,
-  },
-  priceBadge: {
+    },
+    priceBadge: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 12,
+    right: 12,
     backgroundColor: 'rgba(10, 30, 61, 0.85)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
-  },
-  priceText: {
+    },  priceText: {
     color: COLORS.white,
     fontWeight: '700',
     fontSize: 14,

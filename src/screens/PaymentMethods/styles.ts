@@ -1,13 +1,13 @@
 import { StyleSheet, Platform } from 'react-native';
 import { COLORS } from '../../constants/colors';
 
-export const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f6f3' 
   },
 
-  // Unified Header Style to match Figma MoreScreen
+  // Unified Header Style
   header: {
     backgroundColor: COLORS.navy,
     height: 180,
@@ -63,7 +63,6 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f8f6f3',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    flex: 1,
   },
 
   sectionTitle: {
@@ -72,108 +71,105 @@ export const styles = StyleSheet.create({
     color: '#b0b8c1',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: 16,
     marginLeft: 4,
   },
 
-  card: {
+  // Method Card
+  methodCard: {
     backgroundColor: COLORS.white,
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1.5,
-    borderColor: '#f0ede8',
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-
-  fieldGroup: {
-    marginBottom: 20,
-  },
-  fieldGroupLast: {
-    marginBottom: 0,
-  },
-
-  label: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    color: COLORS.navy, 
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fcfbf9',
-    borderWidth: 1.5,
-    borderColor: '#f0ede8',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 52,
-  },
-  inputError: {
-    borderColor: COLORS.red,
-  },
-  inputActive: {
-    borderColor: COLORS.gold,
-    backgroundColor: COLORS.white,
-  },
-
-  icon: {
-    marginRight: 10,
-  },
-
-  input: { 
-    flex: 1,
-    fontSize: 15, 
-    color: COLORS.navy,
-    height: '100%',
-  },
-
-  errorText: { 
-    fontSize: 12, 
-    color: COLORS.red, 
-    marginTop: 4,
-    marginLeft: 4,
-  },
-
-  noteContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(212,165,116,0.08)',
     padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    borderWidth: 1.5,
+    borderColor: '#f0ede8',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.navy,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  noteText: { 
-    flex: 1,
-    fontSize: 13, 
-    color: COLORS.navy, 
-    lineHeight: 18,
+  methodCardDefault: {
+    borderColor: COLORS.gold,
+    backgroundColor: '#fffcf9',
   },
-
-  saveBtn: {
-    backgroundColor: COLORS.navy,
-    borderRadius: 16,
-    height: 56,
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    marginRight: 16,
   },
-  saveBtnText: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: COLORS.white,
-    letterSpacing: 0.5,
+  methodInfo: {
+    flex: 1,
+  },
+  methodLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  methodSub: {
+    fontSize: 13,
+    color: COLORS.gray400,
+  },
+  defaultBadge: {
+    backgroundColor: 'rgba(212, 165, 116, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  defaultText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: COLORS.gold,
+  },
+
+  // Brand Colors
+  gcashBg: { backgroundColor: '#007dfe15' },
+  mayaBg: { backgroundColor: '#c1ff0015' },
+  cardBg: { backgroundColor: '#f3f4f6' },
+
+  // Empty State
+  emptyBox: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 15,
+    color: COLORS.gray400,
+    textAlign: 'center',
+  },
+
+  // Add Button
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: COLORS.gold,
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 8,
+  },
+  addBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.gold,
   },
 });

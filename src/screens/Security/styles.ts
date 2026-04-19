@@ -1,13 +1,13 @@
 import { StyleSheet, Platform } from 'react-native';
 import { COLORS } from '../../constants/colors';
 
-export const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#f8f6f3' 
   },
 
-  // Unified Header Style to match Figma MoreScreen
+  // Unified Header Style
   header: {
     backgroundColor: COLORS.navy,
     height: 180,
@@ -63,7 +63,6 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f8f6f3',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    flex: 1,
   },
 
   sectionTitle: {
@@ -90,21 +89,16 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  // Form styles
   fieldGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  fieldGroupLast: {
-    marginBottom: 0,
-  },
-
   label: { 
     fontSize: 14, 
     fontWeight: '600', 
     color: COLORS.navy, 
     marginBottom: 8,
-    marginLeft: 2,
   },
-
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,65 +109,88 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52,
   },
-  inputError: {
-    borderColor: COLORS.red,
-  },
-  inputActive: {
-    borderColor: COLORS.gold,
-    backgroundColor: COLORS.white,
-  },
-
-  icon: {
-    marginRight: 10,
-  },
-
   input: { 
     flex: 1,
     fontSize: 15, 
     color: COLORS.navy,
-    height: '100%',
   },
-
-  errorText: { 
-    fontSize: 12, 
-    color: COLORS.red, 
-    marginTop: 4,
-    marginLeft: 4,
+  icon: {
+    marginRight: 10,
   },
-
-  noteContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(212,165,116,0.08)',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
-    alignItems: 'center',
-    gap: 12,
-  },
-  noteText: { 
-    flex: 1,
-    fontSize: 13, 
-    color: COLORS.navy, 
-    lineHeight: 18,
-  },
-
   saveBtn: {
     backgroundColor: COLORS.navy,
-    borderRadius: 16,
-    height: 56,
+    borderRadius: 14,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    marginTop: 8,
   },
   saveBtnText: { 
-    fontSize: 16, 
+    fontSize: 15, 
     fontWeight: 'bold', 
     color: COLORS.white,
-    letterSpacing: 0.5,
+  },
+
+  // Activity Row
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  deviceIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(212,165,116,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  deviceName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  deviceDetail: {
+    fontSize: 13,
+    color: COLORS.gray400,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#16a34a',
+  },
+
+  // Danger Zone
+  dangerText: {
+    fontSize: 14,
+    color: COLORS.gray600,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#fecaca',
+    backgroundColor: '#fef5f5',
+    borderRadius: 14,
+    height: 52,
+  },
+  deleteBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.red,
   },
 });
