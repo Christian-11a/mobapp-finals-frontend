@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ScrollView, Text, TextInput, TouchableOpacity, View, 
-  StatusBar, KeyboardAvoidingView, Platform, Alert 
+  StatusBar, KeyboardAvoidingView, Platform, Alert, StyleSheet
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,8 @@ type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Securi
 export default function SecurityScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
+
+  const isAdmin = user?.role === 'admin';
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -38,7 +40,7 @@ export default function SecurityScreen({ navigation }: Props) {
     }
 
     // Mock update
-    showToast('Password updated successfully.', 'success');
+    showToast(isAdmin ? 'System credentials updated.' : 'Password updated successfully.', 'success');
     setCurrentPw('');
     setNewPw('');
     setConfirmPw('');
@@ -106,25 +108,25 @@ export default function SecurityScreen({ navigation }: Props) {
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={22} color={COLORS.white} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Security</Text>
+            <Text style={headerStyles.headerTitle}>{isAdmin ? 'System Security' : 'Security'}</Text>
           </View>
         </View>
 
         <View style={styles.body}>
           {/* Change Password Section */}
-          <Text style={styles.sectionTitle}>Change Password</Text>
+          <Text style={styles.sectionTitle}>{isAdmin ? 'Update Access Credentials' : 'Change Password'}</Text>
           <View style={styles.card}>
             {renderInput('Current Password', currentPw, setCurrentPw, '••••••••')}
             {renderInput('New Password', newPw, setNewPw, 'Min. 8 characters')}
             {renderInput('Confirm New Password', confirmPw, setConfirmPw, 'Repeat new password')}
             
             <TouchableOpacity style={styles.saveBtn} onPress={handleUpdatePassword} activeOpacity={0.8}>
-              <Text style={styles.saveBtnText}>Update Password</Text>
+              <Text style={styles.saveBtnText}>{isAdmin ? 'Update Credentials' : 'Update Password'}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Login Activity */}
-          <Text style={styles.sectionTitle}>Login Activity</Text>
+          <Text style={styles.sectionTitle}>{isAdmin ? 'Admin Session Audit' : 'Login Activity'}</Text>
           <View style={styles.card}>
             <View style={styles.activityRow}>
               <View style={styles.deviceIconBox}>
@@ -140,17 +142,21 @@ export default function SecurityScreen({ navigation }: Props) {
             </View>
           </View>
 
-          {/* Account Deletion */}
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
-          <View style={[styles.card, { borderColor: '#fecaca' }]}>
-            <Text style={styles.dangerText}>
-              Deleting your account will remove all your data, bookings, and personal information from our system. This cannot be undone.
-            </Text>
-            <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
-              <Ionicons name="trash-outline" size={20} color={COLORS.red} />
-              <Text style={styles.deleteBtnText}>Delete Account</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Account Deletion - Hidden for Admins */}
+          {!isAdmin && (
+            <>
+              <Text style={styles.sectionTitle}>Danger Zone</Text>
+              <View style={[styles.card, { borderColor: '#fecaca' }]}>
+                <Text style={styles.dangerText}>
+                  Deleting your account will remove all your data, bookings, and personal information from our system. This cannot be undone.
+                </Text>
+                <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={20} color={COLORS.red} />
+                  <Text style={styles.deleteBtnText}>Delete Account</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
           <View style={{ height: 40 }} />
         </View>
@@ -158,3 +164,7 @@ export default function SecurityScreen({ navigation }: Props) {
     </KeyboardAvoidingView>
   );
 }
+
+const headerStyles = StyleSheet.create({
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.white },
+});

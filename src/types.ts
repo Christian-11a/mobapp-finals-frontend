@@ -68,6 +68,9 @@ export interface Review {
   text: string;
   createdAt: string;
   userName: string;
+  isHidden?: boolean;
+  hiddenReason?: 'Abusive Language' | 'Spam/Fake' | 'Private Information' | 'Off-topic' | 'Other';
+  adminReply?: string;
 }
 
 export interface Booking {
@@ -133,6 +136,9 @@ export type RootStackParamList = {
   AboutUs: undefined;
   FAQ: undefined;
   Policies: undefined;
+  SystemSettings: undefined;
+  AdminHelp: undefined;
+  AdminHelpDetail: { id: string; title: string; category: string };
 };
 
 export type MainTabParamList = {
@@ -144,7 +150,8 @@ export type MainTabParamList = {
 
 export type AdminTabParamList = {
   Dashboard: undefined;
-  AdminRooms: undefined;
+  AdminRooms: { openAdd?: boolean } | undefined;
   AdminBookings: undefined;
   AdminReviews: undefined;
+  AdminProfile: undefined;
 };

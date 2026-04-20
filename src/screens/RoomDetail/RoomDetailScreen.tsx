@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useRooms } from '../../context/RoomContext';
 import { useBookings } from '../../context/BookingContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useSystem } from '../../context/SystemContext';
 import { COLORS } from '../../constants/colors';
 import styles from './styles';
 
@@ -27,6 +28,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
   const room = rooms.find(r => r.id === roomId);
   const { reviews } = useBookings();
   const { user, updateUser } = useAuth();
+  const { getCurrencySymbol } = useSystem();
   const { showToast } = useToast();
 
   const savedIds = user?.savedRoomIds || [];
@@ -60,7 +62,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
     setGalleryIndex(idx);
   };
 
-  const roomReviews = reviews.filter(r => r.roomId === roomId);
+  const roomReviews = reviews.filter(r => r.roomId === roomId && !r.isHidden);
 
   return (
     <View style={styles.mainContainer}>
@@ -120,7 +122,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
           <View style={styles.titleRow}>
             <Text style={styles.title}>{room.title}</Text>
             <View style={styles.priceContainer}>
-              <Text style={styles.priceText}>${room.pricePerNight}</Text>
+              <Text style={styles.priceText}>{getCurrencySymbol()}{room.pricePerNight}</Text>
               <Text style={styles.perNightText}>per night</Text>
             </View>
           </View>
@@ -206,6 +208,16 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
                   </View>
                 </View>
                 <Text style={styles.reviewText}>{r.text}</Text>
+
+                {r.adminReply && (
+                  <View style={adminReplyStyles.replyContainer}>
+                    <View style={adminReplyStyles.replyHeader}>
+                      <Ionicons name="return-down-forward" size={14} color={COLORS.gold} />
+                      <Text style={adminReplyStyles.replyLabel}>Official Response</Text>
+                    </View>
+                    <Text style={adminReplyStyles.replyText}>{r.adminReply}</Text>
+                  </View>
+                )}
               </View>
             ))
           )}
@@ -217,7 +229,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.bottomBarLabel}>Starting from</Text>
-          <Text style={styles.bottomBarPrice}>${room.pricePerNight}<Text style={styles.bottomBarPerNight}>/night</Text></Text>
+          <Text style={styles.bottomBarPrice}>{getCurrencySymbol()}{room.pricePerNight}<Text style={styles.bottomBarPerNight}>/night</Text></Text>
         </View>
         <TouchableOpacity 
           style={[styles.bookBtn, (!room.isAvailable) && styles.bookBtnDisabled]} 
@@ -230,3 +242,31 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
     </View>
   );
 }
+
+const adminReplyStyles = StyleSheet.create({
+  replyContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.gold,
+  },
+  replyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 6,
+  },
+  replyLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.gold,
+  },
+  replyText: {
+    fontSize: 13,
+    color: COLORS.gray600,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+});

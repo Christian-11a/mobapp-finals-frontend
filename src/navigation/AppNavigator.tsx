@@ -31,6 +31,9 @@ import AdminNavigator from './AdminNavigator';
 import EditProfileScreen from '../screens/EditProfile/EditProfileScreen';
 import BookingSuccessScreen from '../screens/BookingSuccess/BookingSuccessScreen';
 import PaymentScreen from '../screens/Payment/PaymentScreen';
+import SystemSettingsScreen from '../screens/AdminProfile/SystemSettingsScreen';
+import AdminHelpScreen from '../screens/AdminProfile/AdminHelpScreen';
+import AdminHelpDetailScreen from '../screens/AdminProfile/AdminHelpDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -87,32 +90,43 @@ export default function AppNavigator() {
             <Stack.Screen name="Landing" component={LandingScreen} />
             <Stack.Screen name="SignIn" component={SignInScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="AboutUs" component={AboutUsScreen} />
-            <Stack.Screen name="FAQ" component={FAQScreen} />
-            <Stack.Screen name="Policies" component={PoliciesScreen} />
           </>
         ) : isAdmin ? (
           <Stack.Screen name="AdminTabs" component={AdminNavigator} />
         ) : (
+          <Stack.Screen name="MainTabs" component={GuestTabNavigator} />
+        )}
+
+        {/* Auth-only Shared Screens */}
+        {isAuthenticated && (
           <>
-            <Stack.Screen name="MainTabs" component={GuestTabNavigator} />
+            {/* Common Profile & Settings */}
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
+            <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            
+            {/* Admin Specific Stack Screens */}
+            <Stack.Screen name="SystemSettings" component={SystemSettingsScreen} />
+            <Stack.Screen name="AdminHelp" component={AdminHelpScreen} />
+            <Stack.Screen name="AdminHelpDetail" component={AdminHelpDetailScreen} />
+            
+            {/* Guest Specific Stack Screens (Admins might not need these, but safe to keep here) */}
             <Stack.Screen name="RoomDetail" component={RoomDetailScreen} />
             <Stack.Screen name="BookingStep1" component={BookingStep1Screen} />
             <Stack.Screen name="BookingStep2" component={BookingStep2Screen} />
             <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            <Stack.Screen name="Security" component={SecurityScreen} />
-            <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
-            <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
             <Stack.Screen name="SavedRooms" component={SavedRoomsScreen} />
-            <Stack.Screen name="AboutUs" component={AboutUsScreen} />
-            <Stack.Screen name="FAQ" component={FAQScreen} />
-            <Stack.Screen name="Policies" component={PoliciesScreen} />
+            <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
           </>
         )}
+
+        {/* Public Shared Screens */}
+        <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+        <Stack.Screen name="FAQ" component={FAQScreen} />
+        <Stack.Screen name="Policies" component={PoliciesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

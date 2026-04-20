@@ -18,7 +18,10 @@ interface BookingContextType {
   getBookingById: (id: string) => Booking | undefined;
   addReview: (review: Review) => void;
   deleteReview: (reviewId: string) => void;
+  toggleReviewVisibility: (reviewId: string, reason?: Review['hiddenReason']) => void;
+  addReviewReply: (reviewId: string, reply: string) => void;
   approveBooking: (bookingId: string) => void;
+  updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
   isRoomBooked: (roomId: string, checkIn: string, checkOut: string, excludeBookingId?: string) => boolean;
 }
 
@@ -28,10 +31,13 @@ const BookingContext = createContext<BookingContextType>({
   addBooking: () => {},
   cancelBooking: () => {},
   approveBooking: () => {},
+  updateBookingStatus: () => {},
   editBooking: () => {},
   getBookingById: () => undefined,
   addReview: () => {},
   deleteReview: () => {},
+  toggleReviewVisibility: () => {},
+  addReviewReply: () => {},
   isRoomBooked: () => false,
 });
 
@@ -55,6 +61,11 @@ export const BookingProvider = ({ children }: { children: React.ReactNode }) => 
       prev.map(b => b.id === bookingId && b.status === 'Pending' ? { ...b, status: 'Confirmed' } : b)
     );
 
+  const updateBookingStatus = (bookingId: string, status: Booking['status']) =>
+    setRawBookings(prev =>
+      prev.map(b => b.id === bookingId ? { ...b, status } : b)
+    );
+
   const editBooking = (bookingId: string, checkInDate: string, checkOutDate: string, totalGuests: number, totalPrice: number) =>
     setRawBookings(prev =>
       prev.map(b => b.id === bookingId ? { ...b, checkInDate, checkOutDate, totalGuests, totalPrice } : b)
@@ -68,6 +79,16 @@ export const BookingProvider = ({ children }: { children: React.ReactNode }) => 
 
   const deleteReview = (reviewId: string) =>
     setReviews(prev => prev.filter(r => r.id !== reviewId));
+
+  const toggleReviewVisibility = (reviewId: string, reason?: Review['hiddenReason']) =>
+    setReviews(prev => prev.map(r => 
+      r.id === reviewId ? { ...r, isHidden: !r.isHidden, hiddenReason: reason } : r
+    ));
+
+  const addReviewReply = (reviewId: string, reply: string) =>
+    setReviews(prev => prev.map(r => 
+      r.id === reviewId ? { ...r, adminReply: reply } : r
+    ));
 
   // Conflict check across ALL users' bookings
   const isRoomBooked = (
@@ -94,10 +115,13 @@ export const BookingProvider = ({ children }: { children: React.ReactNode }) => 
         addBooking,
         cancelBooking,
         approveBooking,
+        updateBookingStatus,
         editBooking,
         getBookingById,
         addReview,
         deleteReview,
+        toggleReviewVisibility,
+        addReviewReply,
         isRoomBooked,
       }}
     >

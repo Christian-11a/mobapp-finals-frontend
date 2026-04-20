@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../types';
 import { styles } from './styles';
 import { COLORS } from '../../constants/colors';
+import { useSystem } from '../../context/SystemContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
 
@@ -29,6 +30,7 @@ const SLIDES = [
 ];
 
 export default function LandingScreen({ navigation }: Props) {
+  const { config } = useSystem();
   const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -91,8 +93,8 @@ export default function LandingScreen({ navigation }: Props) {
             <Ionicons name="business" size={24} color={COLORS.white} />
           </View>
           <View style={styles.logoTextContainer}>
-            <Text style={styles.logoTitle}>LuxeStay</Text>
-            <Text style={styles.logoSubtitle}>Premium Hotels</Text>
+            <Text style={styles.logoTitle}>{config.hotelName.split(' ')[0]}</Text>
+            <Text style={styles.logoSubtitle}>{config.hotelName.split(' ').slice(1).join(' ') || 'Premium Hotels'}</Text>
           </View>
         </View>
 

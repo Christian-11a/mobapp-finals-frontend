@@ -3,13 +3,17 @@ import { ScrollView, Text, TouchableOpacity, View, StatusBar, Platform, Switch, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
 
 export default function NotificationSettingsScreen() {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const { settings, updateSettings } = useNotifications();
   const { showToast } = useToast();
+
+  const isAdmin = user?.role === 'admin';
 
   const togglePush = (key: keyof typeof settings.push) => {
     updateSettings({ push: { ...settings.push, [key]: !settings.push[key] } });
@@ -20,7 +24,7 @@ export default function NotificationSettingsScreen() {
   };
 
   const handleSave = () => {
-    showToast('Notification preferences updated!', 'success', 'top');
+    showToast('Preferences updated!', 'success', 'top');
     navigation.goBack();
   };
 
@@ -46,7 +50,7 @@ export default function NotificationSettingsScreen() {
           <TouchableOpacity style={headerStyles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color={COLORS.white} />
           </TouchableOpacity>
-          <Text style={headerStyles.headerTitle}>Settings</Text>
+          <Text style={headerStyles.headerTitle}>{isAdmin ? 'Admin Alerts' : 'Notifications'}</Text>
           <View style={{ width: 40 }} />
         </View>
       </View>
@@ -56,23 +60,45 @@ export default function NotificationSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ padding: 20, paddingTop: 30 }}>
-          <Text style={itemStyles.sectionTitle}>Push Notifications</Text>
+          <Text style={itemStyles.sectionTitle}>{isAdmin ? 'Operational Alerts' : 'Push Notifications'}</Text>
           <View style={itemStyles.card}>
-            <View style={itemStyles.row}>
-              <View style={itemStyles.info}>
-                <Text style={itemStyles.label}>Booking Updates</Text>
-                <Text style={itemStyles.sub}>Get notified about your reservations</Text>
-              </View>
-              {renderSwitch(settings.push.bookings, () => togglePush('bookings'))}
-            </View>
-            <View style={itemStyles.divider} />
-            <View style={itemStyles.row}>
-              <View style={itemStyles.info}>
-                <Text style={itemStyles.label}>Promotions & Offers</Text>
-                <Text style={itemStyles.sub}>Never miss a special luxury deal</Text>
-              </View>
-              {renderSwitch(settings.push.promos, () => togglePush('promos'))}
-            </View>
+            {isAdmin ? (
+              <>
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>New Bookings</Text>
+                    <Text style={itemStyles.sub}>Alert for every new guest reservation</Text>
+                  </View>
+                  {renderSwitch(settings.push.bookings, () => togglePush('bookings'))}
+                </View>
+                <View style={itemStyles.divider} />
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Guest Feedback</Text>
+                    <Text style={itemStyles.sub}>Notify on low ratings and critical reviews</Text>
+                  </View>
+                  {renderSwitch(settings.push.promos, () => togglePush('promos'))}
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Booking Updates</Text>
+                    <Text style={itemStyles.sub}>Get notified about your reservations</Text>
+                  </View>
+                  {renderSwitch(settings.push.bookings, () => togglePush('bookings'))}
+                </View>
+                <View style={itemStyles.divider} />
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Promotions & Offers</Text>
+                    <Text style={itemStyles.sub}>Never miss a special luxury deal</Text>
+                  </View>
+                  {renderSwitch(settings.push.promos, () => togglePush('promos'))}
+                </View>
+              </>
+            )}
             <View style={itemStyles.divider} />
             <View style={itemStyles.row}>
               <View style={itemStyles.info}>
@@ -83,23 +109,45 @@ export default function NotificationSettingsScreen() {
             </View>
           </View>
 
-          <Text style={itemStyles.sectionTitle}>Email Preferences</Text>
+          <Text style={itemStyles.sectionTitle}>{isAdmin ? 'Reporting & Management' : 'Email Preferences'}</Text>
           <View style={itemStyles.card}>
-            <View style={itemStyles.row}>
-              <View style={itemStyles.info}>
-                <Text style={itemStyles.label}>Monthly Newsletter</Text>
-                <Text style={itemStyles.sub}>Travel inspiration and hotel news</Text>
-              </View>
-              {renderSwitch(settings.email.newsletters, () => toggleEmail('newsletters'))}
-            </View>
-            <View style={itemStyles.divider} />
-            <View style={itemStyles.row}>
-              <View style={itemStyles.info}>
-                <Text style={itemStyles.label}>Billing & Invoices</Text>
-                <Text style={itemStyles.sub}>Receive receipts and payment logs</Text>
-              </View>
-              {renderSwitch(settings.email.billing, () => toggleEmail('billing'))}
-            </View>
+            {isAdmin ? (
+              <>
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Daily Occupancy Report</Text>
+                    <Text style={itemStyles.sub}>Summary of check-ins and room status</Text>
+                  </View>
+                  {renderSwitch(settings.email.newsletters, () => toggleEmail('newsletters'))}
+                </View>
+                <View style={itemStyles.divider} />
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Financial Audits</Text>
+                    <Text style={itemStyles.sub}>Weekly revenue and transaction logs</Text>
+                  </View>
+                  {renderSwitch(settings.email.billing, () => toggleEmail('billing'))}
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Monthly Newsletter</Text>
+                    <Text style={itemStyles.sub}>Travel inspiration and hotel news</Text>
+                  </View>
+                  {renderSwitch(settings.email.newsletters, () => toggleEmail('newsletters'))}
+                </View>
+                <View style={itemStyles.divider} />
+                <View style={itemStyles.row}>
+                  <View style={itemStyles.info}>
+                    <Text style={itemStyles.label}>Billing & Invoices</Text>
+                    <Text style={itemStyles.sub}>Receive receipts and payment logs</Text>
+                  </View>
+                  {renderSwitch(settings.email.billing, () => toggleEmail('billing'))}
+                </View>
+              </>
+            )}
           </View>
 
           <TouchableOpacity style={itemStyles.saveBtn} onPress={handleSave}>

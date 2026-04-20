@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   FlatList, Modal, ScrollView, Switch, Text, TextInput,
-  TouchableOpacity, View,
+  TouchableOpacity, View, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
-import { Room } from '../../types';
+import { Room, AdminTabParamList } from '../../types';
 import { COLORS } from '../../constants/colors';
 import { validateRoomTitle, validateRoomPrice } from '../../utils/validation';
 import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
 import { styles } from './AdminRoomManagementStyle';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
 const ROOM_TYPES = ['Single', 'Double', 'Suite', 'Family', 'Exclusive'] as const;
 const AMENITY_OPTIONS = ['Free WiFi', 'TV', 'Breakfast', 'Balcony', 'Parking', 'Kitchen', 'Gym', 'Pool'];
@@ -33,12 +34,33 @@ const generateId = () => `room_${Date.now()}_${Math.random().toString(36).slice(
 export default function AdminRoomManagementScreen() {
   const { rooms, addRoom, updateRoom, deleteRoom } = useRooms();
   const { showToast } = useToast();
+  const navigation = useNavigation();
+  const route = useRoute<RouteProp<AdminTabParamList, 'AdminRooms'>>();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [errors, setErrors] = useState<FormErrors>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle direct navigation to "Add Room" modal
+  useEffect(() => {
+    if (route.params?.openAdd) {
+      openAdd();
+      // Clear the parameter so it doesn't reopen on every focus
+      navigation.setParams({ openAdd: undefined } as any);
+    }
+  }, [route.params?.openAdd]);
+
+  const filteredRooms = useMemo(() => {
+    return rooms.filter(r => 
+      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.type.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [rooms, searchQuery]);
+
+  const availableRoomsCount = rooms.filter(r => r.isAvailable).length;
 
   const openAdd = () => {
     setEditingRoom(null);
@@ -127,46 +149,103 @@ export default function AdminRoomManagementScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Room Management</Text>
-        <Text style={styles.subtitle}>{rooms.length} room{rooms.length !== 1 ? 's' : ''}</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Room Management</Text>
+            <Text style={styles.headerSubtitle}>{rooms.length} rooms · {availableRoomsCount} available</Text>
+          </View>
+          <TouchableOpacity style={styles.addButton} onPress={openAdd}>
+            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="rgba(255, 255, 255, 0.4)" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search rooms..."
+            placeholderTextColor="rgba(255, 255, 255, 0.4)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
       </View>
 
       <FlatList
-        data={rooms}
+        data={filteredRooms}
         keyExtractor={r => r.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No rooms yet. Tap + to add one.</Text>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="bed-outline" size={64} color={COLORS.gray200} />
+            <Text style={styles.emptyText}>No rooms found.</Text>
           </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={styles.cardLeft}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.cardMeta}>{item.type} · ${item.pricePerNight}/night · max {item.maxPeople}</Text>
-              <View style={[styles.availBadge, item.isAvailable ? styles.availOn : styles.availOff]}>
-                <Text style={[styles.availText, { color: item.isAvailable ? COLORS.green : COLORS.red }]}>
-                  {item.isAvailable ? 'Available' : 'Unavailable'}
-                </Text>
+            <Image 
+              source={{ uri: item.thumbnailPic?.url || item.photos?.[0]?.url || 'https://via.placeholder.com/150' }} 
+              style={styles.roomImage} 
+            />
+            <View style={styles.cardContent}>
+              <View style={styles.cardHeader}>
+                <View>
+                  <View style={styles.typeTag}>
+                    <Text style={styles.typeTagText}>{item.type}</Text>
+                  </View>
+                  <Text style={styles.roomTitle} numberOfLines={1}>{item.title}</Text>
+                </View>
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.actionIconBtn} onPress={() => openEdit(item)}>
+                    <Ionicons name="pencil" size={16} color={COLORS.navy} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.actionIconBtn} onPress={() => setDeleteTarget(item.id)}>
+                    <Ionicons name="trash" size={16} color={COLORS.red} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <View style={styles.actions}>
-              <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
-                <Ionicons name="pencil-outline" size={18} color={COLORS.gold} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteTarget(item.id)}>
-                <Ionicons name="trash-outline" size={18} color={COLORS.red} />
-              </TouchableOpacity>
+
+              <View style={styles.priceRow}>
+                <Text style={styles.priceSymbol}>$</Text>
+                <Text style={styles.priceValue}>{item.pricePerNight}</Text>
+                <Text style={styles.priceUnit}>/night</Text>
+              </View>
+
+              <View style={styles.metaRow}>
+                <View style={styles.metaItem}>
+                  <Ionicons name="people-outline" size={14} color={COLORS.gray400} />
+                  <Text style={styles.metaText}>{item.maxPeople} guests</Text>
+                </View>
+                <View style={styles.metaItem}>
+                  <Ionicons name="star" size={14} color="#FFD700" />
+                  <Text style={styles.metaText}>{item.averageRating.toFixed(1)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.cardFooter}>
+                <View style={styles.featuredBadge}>
+                  <Ionicons name="star" size={10} color={COLORS.gold} />
+                  <Text style={styles.featuredText}>Featured</Text>
+                </View>
+                <View style={styles.statusIndicator}>
+                  <Ionicons 
+                    name="radio-button-on" 
+                    size={14} 
+                    color={item.isAvailable ? COLORS.green : COLORS.red} 
+                  />
+                  <Text style={[styles.statusText, { color: item.isAvailable ? COLORS.green : COLORS.red }]}>
+                    {item.isAvailable ? 'Available' : 'Unavailable'}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         )}
       />
-
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={openAdd}>
-        <Ionicons name="add" size={28} color={COLORS.navy} />
-      </TouchableOpacity>
 
       {/* Add/Edit Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent>
@@ -175,7 +254,7 @@ export default function AdminRoomManagementScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{editingRoom ? 'Edit Room' : 'Add Room'}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.white} />
+                <Ionicons name="close" size={24} color={COLORS.navy} />
               </TouchableOpacity>
             </View>
 
@@ -189,7 +268,7 @@ export default function AdminRoomManagementScreen() {
                 placeholder="e.g. Deluxe Ocean Suite"
                 placeholderTextColor={COLORS.gray400}
               />
-              {errors.title && <Text style={styles.error}>{errors.title}</Text>}
+              {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
 
               {/* Type */}
               <Text style={styles.label}>Room Type *</Text>
@@ -215,7 +294,7 @@ export default function AdminRoomManagementScreen() {
                 placeholder="e.g. 250"
                 placeholderTextColor={COLORS.gray400}
               />
-              {errors.pricePerNight && <Text style={styles.error}>{errors.pricePerNight}</Text>}
+              {errors.pricePerNight && <Text style={styles.errorText}>{errors.pricePerNight}</Text>}
 
               {/* Max People */}
               <Text style={styles.label}>Max Guests *</Text>
@@ -227,16 +306,16 @@ export default function AdminRoomManagementScreen() {
                 placeholder="e.g. 2"
                 placeholderTextColor={COLORS.gray400}
               />
-              {errors.maxPeople && <Text style={styles.error}>{errors.maxPeople}</Text>}
+              {errors.maxPeople && <Text style={styles.errorText}>{errors.maxPeople}</Text>}
 
               {/* Description */}
               <Text style={styles.label}>Description</Text>
               <TextInput
-                style={[styles.input, styles.inputMulti]}
+                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
                 value={form.description}
                 onChangeText={v => setField('description', v)}
                 multiline
-                numberOfLines={3}
+                numberOfLines={4}
                 placeholder="Room description..."
                 placeholderTextColor={COLORS.gray400}
               />
@@ -257,17 +336,20 @@ export default function AdminRoomManagementScreen() {
 
               {/* Availability */}
               <View style={styles.switchRow}>
-                <Text style={styles.label}>Available</Text>
+                <View>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: COLORS.navy }}>Room Availability</Text>
+                  <Text style={{ fontSize: 12, color: COLORS.gray400 }}>Toggle room status</Text>
+                </View>
                 <Switch
                   value={form.isAvailable}
                   onValueChange={v => setField('isAvailable', v)}
-                  trackColor={{ false: COLORS.red + '60', true: COLORS.green + '60' }}
-                  thumbColor={form.isAvailable ? COLORS.green : COLORS.red}
+                  trackColor={{ false: COLORS.gray200, true: COLORS.green + '60' }}
+                  thumbColor={form.isAvailable ? COLORS.green : COLORS.white}
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                <Text style={styles.saveBtnText}>{editingRoom ? 'Update Room' : 'Add Room'}</Text>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>{editingRoom ? 'Update Room' : 'Create Room'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

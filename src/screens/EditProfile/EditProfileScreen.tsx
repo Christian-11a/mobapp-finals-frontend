@@ -17,6 +17,8 @@ export default function EditProfileScreen({ navigation }: Props) {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
 
+  const isAdmin = user?.role === 'admin';
+
   const [firstName, setFirstName] = useState(user?.firstName ?? '');
   const [lastName, setLastName] = useState(user?.lastName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -76,7 +78,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 
     updateStoredUser(user!.id, updatedData);
     updateUser(updatedData);
-    showToast(VALIDATION.PROFILE_UPDATED, 'success');
+    showToast(isAdmin ? 'Admin profile updated.' : VALIDATION.PROFILE_UPDATED, 'success');
     navigation.goBack();
   };
 
@@ -89,14 +91,16 @@ export default function EditProfileScreen({ navigation }: Props) {
     placeholder: string,
     keyboardType: any = 'default',
     secure: boolean = false,
-    showToggle: boolean = false
+    showToggle: boolean = false,
+    editable: boolean = true
   ) => (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
       <View style={[
         styles.inputContainer, 
         errors[errorKey] ? styles.inputError : null,
-        activeField === errorKey ? styles.inputActive : null
+        activeField === errorKey ? styles.inputActive : null,
+        !editable ? { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb' } : null
       ]}>
         <Ionicons 
           name={icon} 
@@ -105,7 +109,7 @@ export default function EditProfileScreen({ navigation }: Props) {
           style={styles.icon} 
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, !editable ? { color: COLORS.gray500 } : null]}
           value={value}
           onChangeText={t => { onChange(t); setErr(errorKey); }}
           onFocus={() => setActiveField(errorKey)}
@@ -114,6 +118,7 @@ export default function EditProfileScreen({ navigation }: Props) {
           placeholderTextColor="rgba(10, 30, 61, 0.3)"
           keyboardType={keyboardType}
           secureTextEntry={secure}
+          editable={editable}
           autoCapitalize={errorKey === 'email' ? 'none' : 'words'}
         />
         {showToggle && (
@@ -142,13 +147,19 @@ export default function EditProfileScreen({ navigation }: Props) {
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={22} color={COLORS.white} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Personal Info</Text>
+            <Text style={headerStyles.headerTitle as any}>{isAdmin ? 'Admin Identity' : 'Personal Info'}</Text>
           </View>
         </View>
 
         <View style={styles.body}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
+          <Text style={styles.sectionTitle}>{isAdmin ? 'Staff Assignment' : 'Basic Information'}</Text>
           <View style={styles.card}>
+            {isAdmin && (
+              <>
+                {renderInput('Staff ID', user?.id.slice(0, 8).toUpperCase() || 'AD-001', () => {}, 'barcode-outline', 'staffId', '', 'default', false, false, false)}
+                {renderInput('Role', 'System Supervisor', () => {}, 'briefcase-outline', 'jobTitle', '', 'default', false, false, false)}
+              </>
+            )}
             {renderInput('First Name', firstName, setFirstName, 'person-outline', 'firstName', 'Enter your first name')}
             {renderInput('Last Name', lastName, setLastName, 'person-outline', 'lastName', 'Enter your last name')}
             {renderInput('Email Address', email, setEmail, 'mail-outline', 'email', 'your@email.com', 'email-address')}
@@ -159,7 +170,7 @@ export default function EditProfileScreen({ navigation }: Props) {
           <View style={styles.card}>
             <View style={styles.noteContainer}>
               <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.gold} />
-              <Text style={styles.noteText}>To protect your account, please enter your current password to confirm these changes.</Text>
+              <Text style={styles.noteText}>To protect {isAdmin ? 'system access' : 'your account'}, please enter your current password to confirm these changes.</Text>
             </View>
             {renderInput('Current Password', currentPassword, setCurrentPassword, 'lock-closed-outline', 'currentPassword', '••••••••', 'default', !showPass, true)}
           </View>
@@ -174,3 +185,7 @@ export default function EditProfileScreen({ navigation }: Props) {
     </KeyboardAvoidingView>
   );
 }
+
+const headerStyles = {
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.white },
+};

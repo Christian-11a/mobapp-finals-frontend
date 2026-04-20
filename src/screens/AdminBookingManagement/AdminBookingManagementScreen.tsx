@@ -1,148 +1,243 @@
-import React, { useState } from 'react';
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import {
+  FlatList, Modal, ScrollView, Text, TextInput,
+  TouchableOpacity, View, Image, ImageBackground,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookings } from '../../context/BookingContext';
 import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
-import { VALIDATION } from '../../constants';
-import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
 import { styles } from './AdminBookingManagementStyle';
+import { useNavigation } from '@react-navigation/native';
+import { Booking } from '../../types';
 
 type StatusFilter = 'All' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
 
 const FILTERS: StatusFilter[] = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
-const STATUS_COLOR: Record<string, string> = {
-  Pending: COLORS.yellow,
-  Confirmed: COLORS.green,
-  Completed: '#3b82f6',
-  Cancelled: COLORS.red,
+const STATUS_CONFIG: Record<string, { bg: string; text: string; icon: string }> = {
+  Pending: { bg: '#fefce8', text: '#d97706', icon: 'time-outline' },
+  Confirmed: { bg: '#f0fdf4', text: '#10b981', icon: 'checkmark-circle-outline' },
+  Completed: { bg: '#eef2ff', text: '#6366f1', icon: 'checkmark-done-circle-outline' },
+  Cancelled: { bg: '#fef2f2', text: '#ef4444', icon: 'close-circle-outline' },
 };
 
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatDate = (dateString: string) => {
+  const d = new Date(dateString);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function AdminBookingManagementScreen() {
-  const { bookings, approveBooking, cancelBooking } = useBookings();
+  const { bookings, updateBookingStatus } = useBookings();
   const { showToast } = useToast();
+  const navigation = useNavigation();
 
   const [filter, setFilter] = useState<StatusFilter>('All');
-  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  const filtered = filter === 'All' ? bookings : bookings.filter(b => b.status === filter);
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(b => {
+      const matchesFilter = filter === 'All' || b.status === filter;
+      const matchesSearch = 
+        b.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.id.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [bookings, filter, searchQuery]);
 
-  const handleApprove = (id: string) => {
-    approveBooking(id);
-    showToast('Booking approved.', 'success');
+  const totalRevenue = useMemo(() => {
+    return bookings
+      .filter(b => b.status !== 'Cancelled')
+      .reduce((sum, b) => sum + b.totalPrice, 0);
+  }, [bookings]);
+
+  const handleUpdateStatus = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setStatusModalVisible(true);
   };
 
-  const handleCancel = () => {
-    if (!cancelTarget) return;
-    const booking = bookings.find(b => b.id === cancelTarget);
-    if (booking?.status === 'Cancelled') {
-      showToast(VALIDATION.CANCEL_ALREADY_CANCELLED, 'error');
-      setCancelTarget(null);
-      return;
+  const onStatusSelect = (status: Booking['status']) => {
+    if (selectedBooking) {
+      updateBookingStatus(selectedBooking.id, status);
+      showToast(`Booking status updated to ${status}`, 'success');
+      setStatusModalVisible(false);
+      setSelectedBooking(null);
     }
-    cancelBooking(cancelTarget);
-    setCancelTarget(null);
-    showToast(VALIDATION.BOOKING_CANCELLED, 'info');
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Booking Management</Text>
-        <Text style={styles.subtitle}>{bookings.length} total booking{bookings.length !== 1 ? 's' : ''}</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>All Bookings</Text>
+            <Text style={styles.headerSubtitle}>Revenue: ${totalRevenue.toLocaleString()}</Text>
+          </View>
+          <TouchableOpacity style={styles.filterButton}>
+            <Ionicons name="filter" size={14} color={COLORS.gold} />
+            <Text style={styles.filterButtonText}>All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color="#99a1af" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by guest, room, or ID..."
+            placeholderTextColor="#99a1af"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsContainer}
+          contentContainerStyle={styles.tabsContent}
+        >
+          {FILTERS.map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.tab, filter === f && styles.tabActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[styles.tabText, filter === f && styles.tabTextActive]}>
+                {f} {filter === f ? `(${filteredBookings.length})` : ''}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Filter tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabsContainer}
-        contentContainerStyle={styles.tabs}
-      >
-        {FILTERS.map(f => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.tab, filter === f && styles.tabActive]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.tabText, filter === f && styles.tabTextActive]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       <FlatList
-        data={filtered}
+        data={filteredBookings}
         keyExtractor={b => b.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="calendar-outline" size={40} color={COLORS.gray700} />
-            <Text style={styles.emptyText}>No {filter !== 'All' ? filter.toLowerCase() : ''} bookings</Text>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={64} color={COLORS.gray200} />
+            <Text style={styles.emptyText}>No bookings found.</Text>
           </View>
         }
         renderItem={({ item }) => {
-          const color = STATUS_COLOR[item.status] ?? COLORS.gray400;
+          const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.Pending;
           return (
             <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.roomTitle} numberOfLines={1}>{item.room.title}</Text>
-                <View style={[styles.statusPill, { backgroundColor: color + '25' }]}>
-                  <Text style={[styles.statusText, { color }]}>{item.status}</Text>
+              <ImageBackground
+                source={{ uri: item.room.thumbnailPic?.url || item.room.photos?.[0]?.url || 'https://via.placeholder.com/300' }}
+                style={styles.cardBanner}
+              >
+                <View style={styles.cardBannerOverlay}>
+                  <Text style={styles.bannerRoomType}>{item.room.type}</Text>
+                  <Text style={styles.bannerRoomTitle}>{item.room.title}</Text>
                 </View>
-              </View>
+                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                  <Ionicons name={status.icon as any} size={12} color={status.text} />
+                  <Text style={[styles.statusBadgeText, { color: status.text }]}>{item.status}</Text>
+                </View>
+              </ImageBackground>
 
-              <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={13} color={COLORS.gray400} />
-                <Text style={styles.infoText}>
-                  {formatDate(item.checkInDate)} → {formatDate(item.checkOutDate)}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="people-outline" size={13} color={COLORS.gray400} />
-                <Text style={styles.infoText}>{item.totalGuests} guest{item.totalGuests !== 1 ? 's' : ''}</Text>
-                <Text style={styles.price}> · ${item.totalPrice}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="person-outline" size={13} color={COLORS.gray400} />
-                <Text style={styles.infoText}>User: {item.userId}</Text>
-              </View>
+              <View style={styles.cardBody}>
+                <View style={styles.guestRow}>
+                  <View style={styles.guestAvatar}>
+                    <Text style={styles.guestAvatarText}>U</Text>
+                  </View>
+                  <View style={styles.guestInfo}>
+                    <Text style={styles.guestName}>{item.userId.slice(0, 8)}...</Text>
+                    <Text style={styles.guestEmail}>guest@example.com</Text>
+                  </View>
+                  <Text style={styles.bookingId}>#{item.id.slice(-4)}</Text>
+                </View>
 
-              {/* Actions */}
-              <View style={styles.actionRow}>
-                {item.status === 'Pending' && (
-                  <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(item.id)}>
-                    <Ionicons name="checkmark-outline" size={15} color={COLORS.green} />
-                    <Text style={styles.approveBtnText}>Approve</Text>
+                <View style={styles.detailsGrid}>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.gridLabel}>Check-in</Text>
+                    <Text style={styles.gridValue}>{formatDate(item.checkInDate)}</Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.gridLabel}>Duration</Text>
+                    <Text style={styles.gridValue}>3 Nights</Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={styles.gridLabel}>Guests</Text>
+                    <Text style={styles.gridValue}>{item.totalGuests} pax</Text>
+                  </View>
+                </View>
+
+                <View style={styles.cardFooter}>
+                  <View style={styles.totalSection}>
+                    <Text style={styles.totalLabel}>Total</Text>
+                    <Text style={styles.totalValue}>${item.totalPrice.toLocaleString()}</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.updateStatusBtn}
+                    onPress={() => handleUpdateStatus(item)}
+                  >
+                    <Text style={styles.updateStatusText}>Update Status</Text>
+                    <Ionicons name="chevron-down" size={14} color={COLORS.navy} />
                   </TouchableOpacity>
-                )}
-                {item.status !== 'Cancelled' && item.status !== 'Completed' && (
-                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setCancelTarget(item.id)}>
-                    <Ionicons name="close-outline" size={15} color={COLORS.red} />
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </TouchableOpacity>
-                )}
+                </View>
               </View>
             </View>
           );
         }}
       />
 
-      <ConfirmationModal
-        visible={!!cancelTarget}
-        title="Cancel Booking?"
-        message="Cancel this booking on behalf of the guest?"
-        confirmText="Yes, Cancel"
-        cancelText="Keep"
-        confirmColor={COLORS.red}
-        icon="close-circle-outline"
-        onConfirm={handleCancel}
-        onCancel={() => setCancelTarget(null)}
-      />
+      {/* Status Update Modal */}
+      <Modal
+        visible={statusModalVisible}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Booking Status</Text>
+              <TouchableOpacity 
+                style={styles.closeBtn}
+                onPress={() => setStatusModalVisible(false)}
+              >
+                <Ionicons name="close" size={20} color={COLORS.navy} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.currentStatusText}>
+              Currently: <Text style={{ fontWeight: 'bold', color: STATUS_CONFIG[selectedBooking?.status || 'Pending'].text }}>
+                {selectedBooking?.status}
+              </Text>
+            </Text>
+
+            <View style={styles.statusOptions}>
+              {Object.keys(STATUS_CONFIG).map((s) => {
+                const config = STATUS_CONFIG[s];
+                const isActive = selectedBooking?.status === s;
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    style={[styles.statusOption, isActive && styles.statusOptionActive]}
+                    onPress={() => onStatusSelect(s as Booking['status'])}
+                  >
+                    <Ionicons name={config.icon as any} size={18} color={isActive ? config.text : COLORS.navy} />
+                    <Text style={[styles.statusOptionText, isActive && styles.statusOptionTextActive]}>
+                      {s}
+                    </Text>
+                    {isActive && <Text style={styles.currentLabel}>(current)</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
