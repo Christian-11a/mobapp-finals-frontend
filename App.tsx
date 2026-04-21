@@ -9,25 +9,30 @@ import { NotificationProvider } from './src/context/NotificationContext';
 import { SystemProvider } from './src/context/SystemContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import ToastContainer from './src/components/Toast/ToastContainer';
+import ErrorBoundary from './src/components/ErrorBoundary/ErrorBoundary';
+import OfflineBanner from './src/components/OfflineBanner/OfflineBanner';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SystemProvider>
-        <AuthContextProvider>
-          <RoomProvider>
-            <BookingProvider>
-              <NotificationProvider>
-                <ToastProvider>
-                  <StatusBar style="light" />
-                  <AppNavigator />
-                  <ToastContainer />
-                </ToastProvider>
-              </NotificationProvider>
-            </BookingProvider>
-          </RoomProvider>
-        </AuthContextProvider>
-      </SystemProvider>
+      <ErrorBoundary>
+        <SystemProvider>
+          <AuthContextProvider>
+            <RoomProvider>
+              <BookingProvider>
+                <NotificationProvider>
+                  <ToastProvider>
+                    <StatusBar style="light" />
+                    <OfflineBanner />
+                    <AppNavigator />
+                    <ToastContainer />
+                  </ToastProvider>
+                </NotificationProvider>
+              </BookingProvider>
+            </RoomProvider>
+          </AuthContextProvider>
+        </SystemProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

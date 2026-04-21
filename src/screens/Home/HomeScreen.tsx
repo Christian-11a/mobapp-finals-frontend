@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity,
-  View, Modal, StatusBar
+  View, Modal, StatusBar, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,9 +25,42 @@ const PRICE_RANGES = [
 ];
 const SORT_OPTIONS = ['Rating', 'Price', 'Name'];
 
+import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
+
+const SkeletonRoomCard = () => (
+  <View style={[styles.roomCard, { height: 120 }]}>
+    <SkeletonLoader width={120} height="100%" borderRadius={20} />
+    <View style={[styles.roomInfo, { flex: 1, padding: 12, gap: 8 }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <SkeletonLoader width={60} height={12} />
+        <SkeletonLoader width={40} height={12} />
+      </View>
+      <SkeletonLoader width="100%" height={16} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+        <SkeletonLoader width={80} height={20} />
+        <SkeletonLoader width={60} height={14} />
+      </View>
+    </View>
+  </View>
+);
+
+const SkeletonFeaturedCard = () => (
+  <View style={styles.featuredCard}>
+    <SkeletonLoader width="100%" height={160} borderRadius={28} />
+    <View style={{ padding: 16, gap: 8 }}>
+      <SkeletonLoader width={60} height={12} />
+      <SkeletonLoader width="80%" height={16} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+        <SkeletonLoader width={60} height={14} />
+        <SkeletonLoader width={40} height={14} />
+      </View>
+    </View>
+  </View>
+);
+
 export default function HomeScreen() {
   const { user, updateUser } = useAuth();
-  const { rooms } = useRooms();
+  const { rooms, featuredRooms, isLoading } = useRooms();
   const { unreadCount } = useNotifications();
   const { showToast } = useToast();
   const navigation = useNavigation<Nav>();
@@ -79,8 +112,6 @@ export default function HomeScreen() {
     return result;
   }, [rooms, search, selectedCategory, activePriceRange, activeSortBy, activeAvailableOnly]);
 
-  const featuredRooms = useMemo(() => rooms.filter(r => r.isTopRated).slice(0, 5), [rooms]);
-
   const handleApplyFilters = () => {
     setActivePriceRange(tempPriceRange);
     setActiveSortBy(tempSortBy);
@@ -98,6 +129,44 @@ export default function HomeScreen() {
     setActiveAvailableOnly(false);
     setIsFilterVisible(false);
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <SkeletonLoader width={120} height={14} style={{ marginBottom: 8 }} />
+              <SkeletonLoader width={180} height={24} />
+            </View>
+          </View>
+          <View style={[styles.searchSection, { marginTop: 24 }]}>
+            <SkeletonLoader width="82%" height={56} borderRadius={18} />
+            <SkeletonLoader width={56} height={56} borderRadius={18} />
+          </View>
+        </View>
+        <ScrollView scrollEnabled={false}>
+          <View style={styles.categoriesContainer}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {[1, 2, 3, 4].map(i => <SkeletonLoader key={i} width={80} height={36} borderRadius={18} />)}
+            </View>
+          </View>
+          <View style={styles.section}>
+            <SkeletonLoader width={140} height={20} style={{ marginBottom: 16, marginLeft: 20 }} />
+            <View style={{ flexDirection: 'row', gap: 20, paddingHorizontal: 20 }}>
+              <SkeletonFeaturedCard />
+              <SkeletonFeaturedCard />
+            </View>
+          </View>
+          <View style={[styles.section, { paddingHorizontal: 20 }]}>
+            <SkeletonLoader width={140} height={20} style={{ marginBottom: 16 }} />
+            {[1, 2, 3].map(i => <SkeletonRoomCard key={i} />)}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
