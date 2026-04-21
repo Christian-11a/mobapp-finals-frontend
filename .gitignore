@@ -46,5 +46,6 @@ yarn-error.*
 session_logs/
 
 # Firebase secrets
+google-services.json
 serviceAccountKey.json
 firestore-debug.log

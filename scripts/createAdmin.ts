@@ -33,8 +33,8 @@ try {
 const auth = admin.auth();
 const db = admin.firestore();
 
-const adminEmail = 'admin@hotel.com';
-const adminPassword = 'Admin123!';
+const adminEmail = process.env.ADMIN_EMAIL || 'admin@hotel.com';
+const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!';
 
 async function createAdmin() {
   let userRecord;
