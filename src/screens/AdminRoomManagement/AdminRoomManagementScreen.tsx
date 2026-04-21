@@ -191,9 +191,6 @@ export default function AdminRoomManagementScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-          </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Room Management</Text>
             <Text style={styles.headerSubtitle}>{rooms.length} rooms · {availableRoomsCount} available</Text>

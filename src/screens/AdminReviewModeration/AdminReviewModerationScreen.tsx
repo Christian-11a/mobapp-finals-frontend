@@ -147,9 +147,6 @@ export default function AdminReviewModerationScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-          </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Guest Reviews</Text>
             <View style={styles.headerStats}>
