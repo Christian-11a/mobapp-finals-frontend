@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { verifyPassword, checkEmailExists, updateStoredUser } from '../../services/authService';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { validateFirstName, validateLastName, validateEmail, validatePhone } from '../../utils/validation';
 import { VALIDATION } from '../../constants';
 import { COLORS } from '../../constants/colors';
@@ -14,7 +16,7 @@ import { styles } from './EditProfileStyle';
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'EditProfile'> };
 
 export default function EditProfileScreen({ navigation }: Props) {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const isAdmin = user?.role === 'admin';
@@ -23,14 +25,29 @@ export default function EditProfileScreen({ navigation }: Props) {
   const [lastName, setLastName] = useState(user?.lastName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [phone, setPhone] = useState(user?.phoneNumber ?? '');
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeField, setActiveField] = useState<string | null>(null);
 
   const setErr = (k: string, v?: string) =>
     setErrors(prev => ({ ...prev, [k]: v ?? '' }));
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -53,33 +70,42 @@ export default function EditProfileScreen({ navigation }: Props) {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) {
       showToast('Please check the highlighted fields to continue.', 'info');
       return;
     }
-    if (!verifyPassword(user!.id, currentPassword)) {
-      setErrors(prev => ({ ...prev, currentPassword: VALIDATION.WRONG_CURRENT_PASSWORD }));
-      showToast(VALIDATION.WRONG_CURRENT_PASSWORD, 'error');
-      return;
-    }
-    if (email.toLowerCase() !== user!.email.toLowerCase() && checkEmailExists(email, user!.id)) {
-      setErrors(prev => ({ ...prev, email: VALIDATION.DUPLICATE_EMAIL }));
-      showToast(VALIDATION.DUPLICATE_EMAIL, 'error');
-      return;
-    }
 
-    const updatedData = { 
-      firstName: firstName.trim(), 
-      lastName: lastName.trim(), 
-      email: email.trim(),
-      phoneNumber: phone.trim()
-    };
+    setLoading(true);
+    try {
+      if (!user) return;
+      
+      await authService.reauthenticate(currentPassword);
+      
+      let finalAvatarUrl = user.avatarUrl;
+      if (avatarUri) {
+        finalAvatarUrl = await userService.uploadAvatar(user.id, avatarUri);
+      }
 
-    updateStoredUser(user!.id, updatedData);
-    updateUser(updatedData);
-    showToast(isAdmin ? 'Admin profile updated.' : VALIDATION.PROFILE_UPDATED, 'success');
-    navigation.goBack();
+      const updatedData = { 
+        firstName: firstName.trim(), 
+        lastName: lastName.trim(), 
+        email: email.trim(),
+        phoneNumber: phone.trim(),
+        avatarUrl: finalAvatarUrl
+      };
+
+      await userService.updateProfile(user.id, updatedData);
+      showToast(isAdmin ? 'Admin profile updated.' : VALIDATION.PROFILE_UPDATED, 'success');
+      navigation.goBack();
+    } catch (err: any) {
+      if (err.code === 'auth/wrong-password') {
+        setErrors(prev => ({ ...prev, currentPassword: VALIDATION.WRONG_CURRENT_PASSWORD }));
+      }
+      showToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderInput = (
@@ -152,6 +178,35 @@ export default function EditProfileScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.body}>
+          {/* Avatar Section */}
+          <View style={{ alignItems: 'center', marginTop: -60, marginBottom: 24 }}>
+            <View style={{ 
+              width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.white, 
+              padding: 4, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2, shadowRadius: 8
+            }}>
+              <View style={{ flex: 1, borderRadius: 56, overflow: 'hidden', backgroundColor: COLORS.navy, justifyContent: 'center', alignItems: 'center' }}>
+                {avatarUri || user?.avatarUrl ? (
+                  <Image source={{ uri: avatarUri || user?.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                ) : (
+                  <Text style={{ fontSize: 40, fontWeight: 'bold', color: COLORS.white }}>
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity 
+                style={{ 
+                  position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, 
+                  borderRadius: 18, backgroundColor: COLORS.gold, justifyContent: 'center', 
+                  alignItems: 'center', borderWidth: 3, borderColor: COLORS.white 
+                }}
+                onPress={pickImage}
+              >
+                <Ionicons name="camera" size={18} color={COLORS.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <Text style={styles.sectionTitle}>{isAdmin ? 'Staff Assignment' : 'Basic Information'}</Text>
           <View style={styles.card}>
             {isAdmin && (

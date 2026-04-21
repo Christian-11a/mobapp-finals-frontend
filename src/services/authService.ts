@@ -1,107 +1,183 @@
+import { notificationService } from './notificationService';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged, 
+  updatePassword as firebaseUpdatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
+  User as FirebaseUser,
+  Unsubscribe
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 import { UserType } from '../types';
+import { VALIDATION } from '../constants';
 
-// ─── Placeholder accounts (remove when backend is ready) ──────────────────────
-export interface StoredUser extends UserType {
-  password: string;
+export class AuthError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+    this.name = 'AuthError';
+  }
 }
 
-export const PLACEHOLDER_ACCOUNTS: StoredUser[] = [
-  {
-    id: 'user_001',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@luxestay.com',
-    phoneNumber: '09123456789',
-    password: 'password123',
-    role: 'guest',
-    paymentMethods: [
-      { id: 'm_001', type: 'card', label: '•••• 4242', isDefault: true, provider: 'Visa' },
-      { id: 'm_002', type: 'gcash', label: '0912***6789', isDefault: false }
-    ],
-    savedRoomIds: ['room_001', 'room_003']
-  },
-  {
-    id: 'user_002',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane@luxestay.com',
-    phoneNumber: '09123456790',
-    password: 'password123',
-    role: 'guest',
-    paymentMethods: [],
-    savedRoomIds: []
-  },
-  {
-    id: 'admin_001',
-    firstName: 'Admin',
-    lastName: 'Hotel',
-    email: 'admin@hotel.com',
-    phoneNumber: '09123456791',
-    password: 'Admin123!',
-    role: 'admin',
-    paymentMethods: [],
-    savedRoomIds: []
-  },
-];
+const mapAuthError = (error: any): AuthError => {
+  const code = error.code || 'unknown';
+  let message = error.message || 'An unexpected error occurred.';
 
-// In-memory user store — replace with API calls when backend is ready
-let registeredUsers: StoredUser[] = [...PLACEHOLDER_ACCOUNTS];
+  switch (code) {
+    case 'auth/invalid-email':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      message = VALIDATION.INVALID_CREDENTIALS;
+      break;
+    case 'auth/email-already-in-use':
+      message = VALIDATION.EMAIL_ALREADY_IN_USE;
+      break;
+    case 'auth/weak-password':
+      message = VALIDATION.WEAK_PASSWORD;
+      break;
+    case 'auth/too-many-requests':
+      message = VALIDATION.TOO_MANY_REQUESTS;
+      break;
+    case 'auth/network-request-failed':
+      message = VALIDATION.NETWORK_ERROR;
+      break;
+  }
 
-// Non-stub helpers
-export const getRegisteredUsersCount = (): number => registeredUsers.length;
-
-export const verifyPassword = (userId: string, password: string): boolean =>
-  registeredUsers.find(u => u.id === userId)?.password === password;
-
-export const checkEmailExists = (email: string, excludeUserId: string): boolean =>
-  registeredUsers.some(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== excludeUserId);
-
-export const updateStoredUser = (
-  userId: string,
-  updates: Partial<UserType>,
-): void => {
-  registeredUsers = registeredUsers.map(u => (u.id === userId ? { ...u, ...updates } : u));
+  return new AuthError(code, message);
 };
 
-export const deleteStoredUser = (userId: string): void => {
-  registeredUsers = registeredUsers.filter(u => u.id !== userId);
-};
-
-// ─── Auth Service ─────────────────────────────────────────────────────────────
 export const authService = {
-  // TODO: replace with → POST /api/auth/login
   login: async (email: string, password: string): Promise<UserType> => {
-    await new Promise(r => setTimeout(r, 600)); // simulate network delay
-    const user = registeredUsers.find(
-      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!user) throw new Error('Invalid email or password.');
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    try {
+      const { user: firebaseUser } = await signInWithEmailAndPassword(auth, email, password);
+      return await fetchUserProfile(firebaseUser);
+    } catch (error) {
+      throw mapAuthError(error);
+    }
   },
 
-  // TODO: replace with → POST /api/auth/register
   register: async (firstName: string, lastName: string, email: string, password: string, phoneNumber?: string): Promise<UserType> => {
-    await new Promise(r => setTimeout(r, 600));
-    const exists = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (exists) throw new Error('An account with this email already exists.');
-    const newUser: StoredUser = {
-      id: `user_${Date.now()}`,
-      firstName,
-      lastName,
-      email,
-      phoneNumber: phoneNumber || '',
-      password,
-      role: 'guest',
-      paymentMethods: [],
-      notificationSettings: {
-        push: { bookings: true, promos: true, account: true },
-        email: { newsletters: false, billing: true }
-      },
-      savedRoomIds: []
-    };
-    registeredUsers.push(newUser);
-    const { password: _, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    try {
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
+      
+      const userData: Omit<UserType, 'role'> = {
+        id: firebaseUser.uid,
+        firstName,
+        lastName,
+        email,
+        phoneNumber: phoneNumber || '',
+        paymentMethods: [],
+        savedRoomIds: [],
+        notificationSettings: {
+          push: { bookings: true, promos: true, account: true },
+          email: { newsletters: false, billing: true }
+        }
+      };
+
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        ...userData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // Send welcome notification
+      await notificationService.sendNotification(
+        firebaseUser.uid,
+        'Welcome to LuxeStay!',
+        'Thank you for choosing us for your premium stay. Explore our rooms and start booking today.',
+        'promo'
+      );
+
+      // Return with guest role as default after registration
+      return { ...userData, role: 'guest' } as UserType;
+    } catch (error) {
+      throw mapAuthError(error);
+    }
   },
+
+  logout: async (): Promise<void> => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      throw mapAuthError(error);
+    }
+  },
+
+  updatePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new AuthError('no-user', VALIDATION.REAUTHENTICATION_REQUIRED);
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await firebaseUpdatePassword(user, newPassword);
+    } catch (error) {
+      if (error instanceof Error && (error as any).code === 'auth/wrong-password') {
+        throw new AuthError('auth/wrong-password', VALIDATION.WRONG_CURRENT_PASSWORD);
+      }
+      throw mapAuthError(error);
+    }
+  },
+
+  deleteAccount: async (password: string): Promise<void> => {
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new AuthError('no-user', VALIDATION.REAUTHENTICATION_REQUIRED);
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+      
+      await deleteDoc(doc(db, 'users', user.uid));
+      await deleteUser(user);
+    } catch (error) {
+      throw mapAuthError(error);
+    }
+  },
+
+  reauthenticate: async (password: string): Promise<void> => {
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new AuthError('no-user', VALIDATION.REAUTHENTICATION_REQUIRED);
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+    } catch (error) {
+      if (error instanceof Error && (error as any).code === 'auth/wrong-password') {
+        throw new AuthError('auth/wrong-password', VALIDATION.WRONG_CURRENT_PASSWORD);
+      }
+      throw mapAuthError(error);
+    }
+  },
+
+  onAuthStateChange: (callback: (user: UserType | null) => void): Unsubscribe => {
+    return onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // In Phase 9, custom claims are READ by AuthContext, not stored in Firestore profile
+          const profile = await fetchUserProfile(firebaseUser);
+          callback(profile);
+        } catch (error) {
+          console.error('Error fetching profile on auth change:', error);
+          callback(null);
+        }
+      } else {
+        callback(null);
+      }
+    });
+  }
 };
+
+async function fetchUserProfile(firebaseUser: FirebaseUser): Promise<UserType> {
+  const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+  if (!userDoc.exists()) {
+    throw new AuthError('no-profile', 'User profile not found.');
+  }
+  return userDoc.data() as UserType;
+}
