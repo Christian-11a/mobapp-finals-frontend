@@ -54,6 +54,7 @@ export interface UserType {
   lastName: string;
   phoneNumber?: string;
   role: 'guest' | 'admin';
+  avatarUrl?: string;
   paymentMethods?: PaymentMethod[];
   notificationSettings?: NotificationSettings;
   savedRoomIds?: string[];
@@ -155,3 +156,13 @@ export type AdminTabParamList = {
   AdminReviews: undefined;
   AdminProfile: undefined;
 };
+
+export interface SystemConfig {
+  hotelName: string;
+  currency: string;
+  taxRate: number;
+  checkInTime: string;
+  checkOutTime: string;
+  autoConfirmBookings: boolean;
+}
+

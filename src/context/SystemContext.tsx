@@ -1,26 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface SystemConfig {
-  hotelName: string;
-  currency: string;
-  taxRate: number;
-  checkInTime: string;
-  checkOutTime: string;
-  autoConfirmBookings: boolean;
-}
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { SystemConfig } from '../types';
+import { systemService } from '../services/systemService';
 
 interface SystemContextType {
   config: SystemConfig;
-  updateConfig: (updates: Partial<SystemConfig>) => void;
+  isLoading: boolean;
+  updateConfig: (updates: Partial<SystemConfig>) => Promise<void>;
   getCurrencySymbol: () => string;
 }
-
-const SYMBOLS: Record<string, string> = {
-  USD: '$',
-  PHP: '₱',
-  EUR: '€',
-  GBP: '£',
-};
 
 const DEFAULT_CONFIG: SystemConfig = {
   hotelName: 'LuxeStay Grand Hotel',
@@ -33,21 +20,48 @@ const DEFAULT_CONFIG: SystemConfig = {
 
 const SystemContext = createContext<SystemContextType>({
   config: DEFAULT_CONFIG,
-  updateConfig: () => {},
+  isLoading: true,
+  updateConfig: async () => {},
   getCurrencySymbol: () => '$',
 });
 
 export const SystemProvider = ({ children }: { children: React.ReactNode }) => {
   const [config, setConfig] = useState<SystemConfig>(DEFAULT_CONFIG);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const updateConfig = (updates: Partial<SystemConfig>) => {
-    setConfig(prev => ({ ...prev, ...updates }));
-  };
+  useEffect(() => {
+    // Real-time subscription to system configuration
+    const unsubscribe = systemService.subscribeToConfig((newConfig) => {
+      setConfig(newConfig);
+      setIsLoading(false);
+    });
 
-  const getCurrencySymbol = () => SYMBOLS[config.currency] || '$';
+    return () => unsubscribe();
+  }, []);
+
+  const updateConfig = useCallback(async (updates: Partial<SystemConfig>) => {
+    try {
+      await systemService.updateConfig(updates);
+      // Local state is updated automatically via the subscription in useEffect
+    } catch (error) {
+      console.error('[SystemContext] Failed to update config:', error);
+      throw error;
+    }
+  }, []);
+
+  const getCurrencySymbol = useCallback(() => {
+    return systemService.getCurrencySymbol(config.currency);
+  }, [config.currency]);
+
+  const value = useMemo(() => ({
+    config,
+    isLoading,
+    updateConfig,
+    getCurrencySymbol
+  }), [config, isLoading, updateConfig, getCurrencySymbol]);
 
   return (
-    <SystemContext.Provider value={{ config, updateConfig, getCurrencySymbol }}>
+    <SystemContext.Provider value={value}>
       {children}
     </SystemContext.Provider>
   );

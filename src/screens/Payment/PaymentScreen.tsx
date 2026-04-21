@@ -73,44 +73,42 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
     if (!validateForm()) return;
 
     setLoading(true);
-    // Mock processing time
-    setTimeout(() => {
-      try {
-        const bookingId = `booking_${Date.now()}`;
-        addBooking({
-          id: bookingId,
-          userId: user!.id,
-          room: {
-            id: room.id,
-            title: room.name,
-            description: '', 
-            type: (room.category as any) || 'Suite',
-            pricePerNight: room.price,
-            maxPeople: guests, 
-            amenities: [],
-            photos: [{ url: room.image }],
-            isAvailable: true,
-            averageRating: 5,
-          },
-          checkInDate: checkIn,
-          checkOutDate: checkOut,
-          totalGuests: guests,
-          totalPrice,
-          status: 'Confirmed',
-          bookedAt: new Date().toISOString(),
-        });
+    try {
+      const bookingId = await addBooking({
+        userId: user!.id,
+        room: {
+          id: room.id,
+          title: room.name,
+          description: '', 
+          type: (room.category as any) || 'Suite',
+          pricePerNight: room.price,
+          maxPeople: guests, 
+          amenities: [],
+          photos: [{ url: room.image }],
+          isAvailable: true,
+          averageRating: 5,
+        },
+        checkInDate: checkIn,
+        checkOutDate: checkOut,
+        totalGuests: guests,
+        totalPrice,
+      });
 
-        showToast('Payment Successful!', 'success', 'center', 1000);
-        
-        setTimeout(() => {
-          setLoading(false);
-          navigation.replace('BookingSuccess', { bookingId });
-        }, 1000);
-      } catch (error) {
+      showToast('Payment Successful!', 'success', 'center', 1000);
+      
+      setTimeout(() => {
         setLoading(false);
-        showToast('Booking failed. Please try again.', 'error', 'bottom');
+        navigation.replace('BookingSuccess', { bookingId });
+      }, 1000);
+    } catch (error: any) {
+      setLoading(false);
+      if (error.code === 'DOUBLE_BOOKING') {
+        showToast('This room was just booked by someone else. Please choose different dates.', 'error', 'bottom', 3000);
+        navigation.goBack();
+      } else {
+        showToast(error.message || 'Booking failed. Please try again.', 'error', 'bottom');
       }
-    }, 1500);
+    }
   };
 
   const getIcon = (type: string) => {

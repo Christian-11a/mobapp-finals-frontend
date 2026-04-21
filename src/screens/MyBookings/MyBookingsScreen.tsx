@@ -64,18 +64,12 @@ const getStatusBadgeConfig = (status: Booking['status']) => {
 };
 
 export default function MyBookingsScreen() {
-  const { bookings } = useBookings();
+  const { bookings, isLoading } = useBookings();
   const { user } = useAuth();
   const navigation = useNavigation<Nav>();
 
   const [activeTab, setActiveTab] = useState<Tab>('Upcoming');
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -127,7 +121,7 @@ export default function MyBookingsScreen() {
         </ScrollView>
       </View>
 
-      {loading ? (
+      {isLoading ? (
         <ScrollView contentContainerStyle={styles.list}>
           {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
         </ScrollView>

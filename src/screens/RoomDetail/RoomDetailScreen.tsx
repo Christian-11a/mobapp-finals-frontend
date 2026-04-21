@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +24,7 @@ const fmtStr = (d: string) =>
 
 export default function RoomDetailScreen({ navigation, route }: Props) {
   const { roomId } = route.params;
-  const { rooms } = useRooms();
+  const { rooms, isLoading } = useRooms();
   const room = rooms.find(r => r.id === roomId);
   const { reviews } = useBookings();
   const { user, updateUser } = useAuth();
@@ -48,6 +48,15 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
 
   const scrollViewRef = useRef<ScrollView>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.gold} />
+        <Text style={{ color: COLORS.gray400, marginTop: 12 }}>Loading details...</Text>
+      </View>
+    );
+  }
 
   if (!room) return null;
 

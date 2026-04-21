@@ -17,13 +17,28 @@ const STATUS_CONFIG: Record<string, { bg: string; dot: string; text: string }> =
   Cancelled: { bg: '#fef2f2', dot: '#ef4444', text: '#ef4444' },
 };
 
+import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
+
+const SkeletonStatCard = () => (
+  <View style={styles.statCard}>
+    <View style={styles.statCardTop}>
+      <SkeletonLoader width={32} height={32} borderRadius={8} />
+      <SkeletonLoader width={40} height={16} borderRadius={4} />
+    </View>
+    <SkeletonLoader width="80%" height={24} style={{ marginTop: 12 }} />
+    <SkeletonLoader width="50%" height={12} style={{ marginTop: 8 }} />
+  </View>
+);
+
 export default function AdminDashboardScreen() {
   const { user } = useAuth();
-  const { bookings, reviews } = useBookings();
-  const { rooms } = useRooms();
-  const { config } = useSystem();
+  const { bookings, reviews, isLoading: bookingsLoading } = useBookings();
+  const { rooms, isLoading: roomsLoading } = useRooms();
+  const { config, isLoading: systemLoading } = useSystem();
   const { showToast } = useToast();
   const navigation = useNavigation<any>();
+
+  const isLoading = bookingsLoading || roomsLoading || systemLoading;
 
   const [analyticsTab, setAnalyticsTab] = useState<'Revenue' | 'Bookings'>('Revenue');
 
@@ -66,6 +81,28 @@ export default function AdminDashboardScreen() {
     const d = new Date(dateString);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <SkeletonLoader width={120} height={14} style={{ marginBottom: 8 }} />
+          <SkeletonLoader width={200} height={28} />
+        </View>
+        <View style={styles.content}>
+          <View style={styles.statsGrid}>
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </View>
+          <View style={[styles.sectionBox, { height: 200 }]}>
+            <SkeletonLoader width="100%" height="100%" borderRadius={24} />
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

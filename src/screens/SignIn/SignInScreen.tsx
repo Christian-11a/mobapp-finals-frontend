@@ -24,7 +24,6 @@ export default function SignInScreen({ navigation }: Props) {
   
   const passwordRef = useRef<TextInput>(null);
 
-  const { login } = useAuth();
   const { showToast } = useToast();
 
   const validate = () => {
@@ -41,7 +40,6 @@ export default function SignInScreen({ navigation }: Props) {
     setLoading(true);
     try {
       const user = await authService.login(email.trim(), password);
-      login(user);
       showToast(`Welcome back, ${user.firstName}!`, 'success');
     } catch (err: any) {
       showToast(err.message, 'error');

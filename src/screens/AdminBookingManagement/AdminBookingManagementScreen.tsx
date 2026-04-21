@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
 import { styles } from './AdminBookingManagementStyle';
 import { useNavigation } from '@react-navigation/native';
+import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
 import { Booking } from '../../types';
 
 type StatusFilter = 'All' | 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
@@ -28,7 +29,7 @@ const formatDate = (dateString: string) => {
 };
 
 export default function AdminBookingManagementScreen() {
-  const { bookings, updateBookingStatus } = useBookings();
+  const { bookings, updateBookingStatus, isLoading } = useBookings();
   const { showToast } = useToast();
   const navigation = useNavigation();
 
@@ -59,12 +60,17 @@ export default function AdminBookingManagementScreen() {
     setStatusModalVisible(true);
   };
 
-  const onStatusSelect = (status: Booking['status']) => {
+  const onStatusSelect = async (status: Booking['status']) => {
     if (selectedBooking) {
-      updateBookingStatus(selectedBooking.id, status);
-      showToast(`Booking status updated to ${status}`, 'success');
-      setStatusModalVisible(false);
-      setSelectedBooking(null);
+      try {
+        await updateBookingStatus(selectedBooking.id, status);
+        showToast(`Booking status updated to ${status}`, 'success');
+      } catch (error) {
+        showToast('Failed to update status', 'error');
+      } finally {
+        setStatusModalVisible(false);
+        setSelectedBooking(null);
+      }
     }
   };
 
@@ -117,79 +123,87 @@ export default function AdminBookingManagementScreen() {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredBookings}
-        keyExtractor={b => b.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color={COLORS.gray200} />
-            <Text style={styles.emptyText}>No bookings found.</Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.Pending;
-          return (
-            <View style={styles.card}>
-              <ImageBackground
-                source={{ uri: item.room.thumbnailPic?.url || item.room.photos?.[0]?.url || 'https://via.placeholder.com/300' }}
-                style={styles.cardBanner}
-              >
-                <View style={styles.cardBannerOverlay}>
-                  <Text style={styles.bannerRoomType}>{item.room.type}</Text>
-                  <Text style={styles.bannerRoomTitle}>{item.room.title}</Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                  <Ionicons name={status.icon as any} size={12} color={status.text} />
-                  <Text style={[styles.statusBadgeText, { color: status.text }]}>{item.status}</Text>
-                </View>
-              </ImageBackground>
+      {isLoading ? (
+        <View style={{ padding: 20 }}>
+          <SkeletonLoader height={180} style={{ marginBottom: 16 }} />
+          <SkeletonLoader height={180} style={{ marginBottom: 16 }} />
+          <SkeletonLoader height={180} style={{ marginBottom: 16 }} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredBookings}
+          keyExtractor={b => b.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="calendar-outline" size={64} color={COLORS.gray200} />
+              <Text style={styles.emptyText}>No bookings found.</Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.Pending;
+            return (
+              <View style={styles.card}>
+                <ImageBackground
+                  source={{ uri: item.room.thumbnailPic?.url || item.room.photos?.[0]?.url || 'https://via.placeholder.com/300' }}
+                  style={styles.cardBanner}
+                >
+                  <View style={styles.cardBannerOverlay}>
+                    <Text style={styles.bannerRoomType}>{item.room.type}</Text>
+                    <Text style={styles.bannerRoomTitle}>{item.room.title}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                    <Ionicons name={status.icon as any} size={12} color={status.text} />
+                    <Text style={[styles.statusBadgeText, { color: status.text }]}>{item.status}</Text>
+                  </View>
+                </ImageBackground>
 
-              <View style={styles.cardBody}>
-                <View style={styles.guestRow}>
-                  <View style={styles.guestAvatar}>
-                    <Text style={styles.guestAvatarText}>U</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.guestRow}>
+                    <View style={styles.guestAvatar}>
+                      <Text style={styles.guestAvatarText}>U</Text>
+                    </View>
+                    <View style={styles.guestInfo}>
+                      <Text style={styles.guestName}>{item.userId.slice(0, 8)}...</Text>
+                      <Text style={styles.guestEmail}>guest@example.com</Text>
+                    </View>
+                    <Text style={styles.bookingId}>#{item.id.slice(-4)}</Text>
                   </View>
-                  <View style={styles.guestInfo}>
-                    <Text style={styles.guestName}>{item.userId.slice(0, 8)}...</Text>
-                    <Text style={styles.guestEmail}>guest@example.com</Text>
-                  </View>
-                  <Text style={styles.bookingId}>#{item.id.slice(-4)}</Text>
-                </View>
 
-                <View style={styles.detailsGrid}>
-                  <View style={styles.gridItem}>
-                    <Text style={styles.gridLabel}>Check-in</Text>
-                    <Text style={styles.gridValue}>{formatDate(item.checkInDate)}</Text>
+                  <View style={styles.detailsGrid}>
+                    <View style={styles.gridItem}>
+                      <Text style={styles.gridLabel}>Check-in</Text>
+                      <Text style={styles.gridValue}>{formatDate(item.checkInDate)}</Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={styles.gridLabel}>Duration</Text>
+                      <Text style={styles.gridValue}>3 Nights</Text>
+                    </View>
+                    <View style={styles.gridItem}>
+                      <Text style={styles.gridLabel}>Guests</Text>
+                      <Text style={styles.gridValue}>{item.totalGuests} pax</Text>
+                    </View>
                   </View>
-                  <View style={styles.gridItem}>
-                    <Text style={styles.gridLabel}>Duration</Text>
-                    <Text style={styles.gridValue}>3 Nights</Text>
-                  </View>
-                  <View style={styles.gridItem}>
-                    <Text style={styles.gridLabel}>Guests</Text>
-                    <Text style={styles.gridValue}>{item.totalGuests} pax</Text>
-                  </View>
-                </View>
 
-                <View style={styles.cardFooter}>
-                  <View style={styles.totalSection}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalValue}>${item.totalPrice.toLocaleString()}</Text>
+                  <View style={styles.cardFooter}>
+                    <View style={styles.totalSection}>
+                      <Text style={styles.totalLabel}>Total</Text>
+                      <Text style={styles.totalValue}>${item.totalPrice.toLocaleString()}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={styles.updateStatusBtn}
+                      onPress={() => handleUpdateStatus(item)}
+                    >
+                      <Text style={styles.updateStatusText}>Update Status</Text>
+                      <Ionicons name="chevron-down" size={14} color={COLORS.navy} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity 
-                    style={styles.updateStatusBtn}
-                    onPress={() => handleUpdateStatus(item)}
-                  >
-                    <Text style={styles.updateStatusText}>Update Status</Text>
-                    <Ionicons name="chevron-down" size={14} color={COLORS.navy} />
-                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
-          );
-        }}
-      />
+            );
+          }}
+        />
+      )}
 
       {/* Status Update Modal */}
       <Modal

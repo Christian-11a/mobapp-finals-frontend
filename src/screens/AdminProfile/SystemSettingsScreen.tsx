@@ -22,18 +22,52 @@ export default function SystemSettingsScreen() {
   const [currency, setCurrency] = useState(config.currency);
   const [autoConfirm, setAutoConfirm] = useState(config.autoConfirmBookings);
   const [taxRate, setTaxRate] = useState(String(config.taxRate));
+  const [checkInTime, setCheckInTime] = useState(config.checkInTime);
+  const [checkOutTime, setCheckOutTime] = useState(config.checkOutTime);
   
+  const [isSaving, setIsSaving] = useState(false);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
 
-  const handleSave = () => {
-    updateConfig({
-      hotelName,
-      currency,
-      autoConfirmBookings: autoConfirm,
-      taxRate: Number(taxRate) || 0,
-    });
-    showToast('System configuration saved successfully.', 'success');
-    navigation.goBack();
+  const handleSave = async () => {
+    // Basic validation
+    if (!hotelName.trim()) {
+      showToast('Hotel name is required.', 'error');
+      return;
+    }
+
+    const rate = Number(taxRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      showToast('Tax rate must be between 0 and 100.', 'error');
+      return;
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):?([0-5]\d)$/;
+    if (!timeRegex.test(checkInTime)) {
+      showToast('Invalid check-in time format. Use HH:mm.', 'error');
+      return;
+    }
+    if (!timeRegex.test(checkOutTime)) {
+      showToast('Invalid check-out time format. Use HH:mm.', 'error');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateConfig({
+        hotelName: hotelName.trim(),
+        currency,
+        autoConfirmBookings: autoConfirm,
+        taxRate: rate,
+        checkInTime,
+        checkOutTime,
+      });
+      showToast('System configuration saved successfully.', 'success');
+      navigation.goBack();
+    } catch (error: any) {
+      showToast(error.message || 'Failed to save configuration.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderSection = (title: string, children: React.ReactNode) => (
@@ -54,19 +88,22 @@ export default function SystemSettingsScreen() {
         onValueChange={onValueChange} 
         trackColor={{ false: '#e5e7eb', true: COLORS.navy }}
         thumbColor={Platform.OS === 'android' ? (value ? COLORS.gold : '#f3f4f6') : (value ? COLORS.white : '')}
+        disabled={isSaving}
       />
     </View>
   );
 
-  const renderInput = (label: string, value: string, onChange: (t: string) => void, placeholder: string) => (
+  const renderInput = (label: string, value: string, onChange: (t: string) => void, placeholder: string, keyboardType: any = 'default') => (
     <View style={itemStyles.inputGroup}>
       <Text style={itemStyles.inputLabel}>{label}</Text>
       <TextInput
-        style={itemStyles.input}
+        style={[itemStyles.input, isSaving && { opacity: 0.5 }]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
         placeholderTextColor={COLORS.gray400}
+        keyboardType={keyboardType}
+        editable={!isSaving}
       />
     </View>
   );
@@ -78,7 +115,7 @@ export default function SystemSettingsScreen() {
       <View style={headerStyles.header}>
         <View style={headerStyles.headerDecor1} />
         <View style={headerStyles.headerContent}>
-          <TouchableOpacity style={headerStyles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={headerStyles.backBtn} onPress={() => navigation.goBack()} disabled={isSaving}>
             <Ionicons name="arrow-back" size={22} color={COLORS.white} />
           </TouchableOpacity>
           <Text style={headerStyles.headerTitle}>System Settings</Text>
@@ -93,21 +130,9 @@ export default function SystemSettingsScreen() {
             <>
               {renderInput('Hotel Name', hotelName, setHotelName, 'Enter hotel name')}
               <View style={itemStyles.divider} />
-              <View style={itemStyles.row}>
-                <View style={itemStyles.info}>
-                  <Text style={itemStyles.label}>Check-in Time</Text>
-                  <Text style={itemStyles.sub}>Standard arrival time</Text>
-                </View>
-                <Text style={itemStyles.valueText}>{config.checkInTime}</Text>
-              </View>
+              {renderInput('Check-in Time', checkInTime, setCheckInTime, '14:00', 'numbers-and-punctuation')}
               <View style={itemStyles.divider} />
-              <View style={itemStyles.row}>
-                <View style={itemStyles.info}>
-                  <Text style={itemStyles.label}>Check-out Time</Text>
-                  <Text style={itemStyles.sub}>Standard departure time</Text>
-                </View>
-                <Text style={itemStyles.valueText}>{config.checkOutTime}</Text>
-              </View>
+              {renderInput('Check-out Time', checkOutTime, setCheckOutTime, '12:00', 'numbers-and-punctuation')}
             </>
           ))}
 
@@ -120,14 +145,15 @@ export default function SystemSettingsScreen() {
                 </View>
                 <TouchableOpacity 
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                  onPress={() => setCurrencyModalVisible(true)}
+                  onPress={() => !isSaving && setCurrencyModalVisible(true)}
+                  disabled={isSaving}
                 >
-                  <Text style={itemStyles.valueText}>{currency}</Text>
+                  <Text style={[itemStyles.valueText, isSaving && { opacity: 0.5 }]}>{currency}</Text>
                   <Ionicons name="chevron-forward" size={14} color={COLORS.gold} />
                 </TouchableOpacity>
               </View>
               <View style={itemStyles.divider} />
-              {renderInput('Tax Rate (%)', taxRate, setTaxRate, '12')}
+              {renderInput('Tax Rate (%)', taxRate, setTaxRate, '12', 'numeric')}
             </>
           ))}
 
@@ -150,8 +176,14 @@ export default function SystemSettingsScreen() {
             </>
           ))}
 
-          <TouchableOpacity style={itemStyles.saveBtn} onPress={handleSave}>
-            <Text style={itemStyles.saveBtnText}>Apply Global Settings</Text>
+          <TouchableOpacity 
+            style={[itemStyles.saveBtn, isSaving && { opacity: 0.7 }]} 
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            <Text style={itemStyles.saveBtnText}>
+              {isSaving ? 'Applying Settings...' : 'Apply Global Settings'}
+            </Text>
           </TouchableOpacity>
         </View>
         <View style={{ height: 40 }} />

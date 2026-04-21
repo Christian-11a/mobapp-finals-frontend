@@ -41,7 +41,6 @@ export default function RegisterScreen({ navigation }: Props) {
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
-  const { login } = useAuth();
   const { showToast } = useToast();
 
   const validate = () => {
@@ -87,7 +86,6 @@ export default function RegisterScreen({ navigation }: Props) {
         password,
         phone.trim() || undefined
       );
-      login(user);
       showToast(`Welcome to LuxeStay, ${user.firstName}!`, 'success');
     } catch (err: any) {
       showToast(err.message, 'error');

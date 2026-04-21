@@ -44,3 +44,7 @@ yarn-error.*
 
 .gemini
 session_logs/
+
+# Firebase secrets
+serviceAccountKey.json
+firestore-debug.log

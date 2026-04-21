@@ -1,39 +1,56 @@
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Image, Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, StatusBar, Image, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
+import { userService } from '../../services/userService';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
 
 export default function SavedRoomsScreen() {
   const navigation = useNavigation<any>();
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { rooms } = useRooms();
   const { showToast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
 
   const savedIds = user?.savedRoomIds || [];
   const savedRooms = rooms.filter(r => savedIds.includes(r.id));
 
-  const toggleSave = (roomId: string) => {
+  const toggleSave = async (roomId: string) => {
+    if (!user) return;
     const isSaved = savedIds.includes(roomId);
-    let newIds: string[];
-    if (isSaved) {
-      newIds = savedIds.filter(id => id !== roomId);
-      showToast('Room removed from wishlist', 'info', 'bottom');
-    } else {
-      newIds = [...savedIds, roomId];
-      showToast('Room saved to wishlist!', 'success', 'bottom');
+    
+    setLoading(roomId);
+    try {
+      if (isSaved) {
+        await userService.unsaveRoom(user.id, roomId);
+        showToast('Room removed from wishlist', 'info', 'bottom');
+      } else {
+        await userService.saveRoom(user.id, roomId);
+        showToast('Room saved to wishlist!', 'success', 'bottom');
+      }
+    } catch (error) {
+      showToast('Action failed. Please try again.', 'error');
+    } finally {
+      setLoading(null);
     }
-    updateUser({ savedRoomIds: newIds });
   };
 
-  const handleClearAll = () => {
-    if (savedIds.length === 0) return;
-    updateUser({ savedRoomIds: [] });
-    showToast('Wishlist cleared', 'info', 'bottom');
+  const handleClearAll = async () => {
+    if (savedIds.length === 0 || !user) return;
+    
+    setLoading('all');
+    try {
+      await userService.clearWishlist(user.id);
+      showToast('Wishlist cleared', 'info', 'bottom');
+    } catch (error) {
+      showToast('Failed to clear wishlist', 'error');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -49,8 +66,12 @@ export default function SavedRoomsScreen() {
             <Ionicons name="arrow-back" size={22} color={COLORS.white} />
           </TouchableOpacity>
           <Text style={headerStyles.headerTitle}>Saved Rooms</Text>
-          <TouchableOpacity onPress={handleClearAll}>
-            <Text style={headerStyles.clearText}>Clear all</Text>
+          <TouchableOpacity onPress={handleClearAll} disabled={loading === 'all'}>
+            {loading === 'all' ? (
+              <ActivityIndicator size="small" color={COLORS.gold} />
+            ) : (
+              <Text style={headerStyles.clearText}>Clear all</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -85,12 +106,17 @@ export default function SavedRoomsScreen() {
                 onPress={() => navigation.navigate('RoomDetail', { roomId: room.id })}
               >
                 <View>
-                  <Image source={{ uri: room.thumbnailPic?.url }} style={roomStyles.image} />
+                  <Image source={{ uri: room.thumbnailPic?.url || room.photos?.[0]?.url }} style={roomStyles.image} />
                   <TouchableOpacity 
                     style={[roomStyles.heartBtn, { top: 8, left: 8 }]}
                     onPress={() => toggleSave(room.id)}
+                    disabled={loading === room.id}
                   >
-                    <Ionicons name="heart" size={18} color={COLORS.red} />
+                    {loading === room.id ? (
+                      <ActivityIndicator size="small" color={COLORS.red} />
+                    ) : (
+                      <Ionicons name="heart" size={18} color={COLORS.red} />
+                    )}
                   </TouchableOpacity>
                 </View>
                 

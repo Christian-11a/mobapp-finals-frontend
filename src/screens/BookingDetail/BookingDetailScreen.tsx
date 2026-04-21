@@ -84,8 +84,8 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
 
   const existingReview = reviews.find(r => r.bookingId === bookingId);
 
-  const handleCancel = () => {
-    cancelBooking(bookingId);
+  const handleCancel = async () => {
+    await cancelBooking(bookingId);
     setCancelModal(false);
     showToast('Booking cancelled. Refund processed minus cancellation fee.', 'info');
     navigation.goBack();
@@ -95,7 +95,7 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const handleEditBooking = () => {
+  const handleEditBooking = async () => {
     if (!newCheckIn || !newCheckOut) {
       showToast('Please select dates.', 'error');
       return;
@@ -114,32 +114,30 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
     const inStr = newCheckIn.toISOString();
     const outStr = newCheckOut.toISOString();
     
-    if (isRoomBooked(booking.room.id, inStr, outStr, bookingId)) {
+    if (await isRoomBooked(booking.room.id, inStr, outStr, bookingId)) {
       showToast('These dates are no longer available. Please choose others.', 'error');
       return;
     }
 
-    editBooking(bookingId, inStr, outStr, newGuests, newTotalPrice);
+    await editBooking(bookingId, inStr, outStr, newGuests, newTotalPrice);
     setEditModal(false);
     showToast('Booking updated successfully!', 'success');
   };
 
   // ── Review ───────────────────────────────────────────────────────────────────
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     const rErr = validateReviewRating(rating);
     const tErr = validateReviewText(reviewText);
     setRatingErr(rErr ?? '');
     setTextErr(tErr ?? '');
     if (rErr || tErr) { showToast('Please complete all review fields.', 'error'); return; }
 
-    addReview({
-      id: `review_${Date.now()}`,
+    await addReview({
       bookingId,
       userId: user!.id,
       roomId: booking.room.id,
       rating,
       text: reviewText.trim(),
-      createdAt: new Date().toISOString(),
       userName: `${user!.firstName} ${user!.lastName}`,
     });
     setReviewModal(false);

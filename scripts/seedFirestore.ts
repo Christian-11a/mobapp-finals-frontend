@@ -1,6 +1,24 @@
-import { Room, Booking } from '../types';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-export const PLACEHOLDER_ROOMS: Room[] = [
+// Load .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const PLACEHOLDER_ROOMS = [
   {
     id: '1',
     title: 'Deluxe Ocean Suite',
@@ -59,6 +77,7 @@ export const PLACEHOLDER_ROOMS: Room[] = [
     isAvailable: true,
     averageRating: 4.2,
     reviewCount: 210,
+    isTopRated: false,
   },
   {
     id: '5',
@@ -77,4 +96,53 @@ export const PLACEHOLDER_ROOMS: Room[] = [
   },
 ];
 
-export const PLACEHOLDER_BOOKINGS: Booking[] = [];
+const DEFAULT_CONFIG = {
+  hotelName: 'LuxeStay',
+  currency: 'USD',
+  taxRate: 12,
+  checkInTime: '14:00',
+  checkOutTime: '12:00',
+  autoConfirmBookings: true,
+};
+
+async function seed() {
+  console.log('🌱 Starting seeding process...');
+  
+  // Seed Rooms
+  console.log('📦 Seeding rooms...');
+  for (const room of PLACEHOLDER_ROOMS) {
+    const { id, ...roomData } = room;
+    await setDoc(doc(db, 'rooms', id), {
+      ...roomData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    console.log(`  ✅ Seeded room: ${room.title}`);
+  }
+
+  // Seed System Config
+  console.log('⚙️ Seeding system configuration...');
+  const systemConfigRef = doc(db, 'systemConfig', 'main');
+  const systemConfigSnap = await getDoc(systemConfigRef);
+  
+  if (!systemConfigSnap.exists()) {
+    await setDoc(systemConfigRef, {
+      ...DEFAULT_CONFIG,
+      updatedAt: serverTimestamp()
+    });
+    console.log('  ✅ Seeded systemConfig/main (initial)');
+  } else {
+    // Optionally use merge: true here if you want to ensure DEFAULT_CONFIG fields exist
+    // but the prompt says "creates ... if it doesn't exist" and "re-running the seed doesn't overwrite admin changes"
+    // So skipping if exists is the safest way to NOT overwrite admin changes.
+    console.log('  ℹ️ systemConfig/main already exists, skipping seed.');
+  }
+
+  console.log('✨ Seeding complete!');
+  process.exit(0);
+}
+
+seed().catch(err => {
+  console.error('❌ Seeding failed:', err);
+  process.exit(1);
+});

@@ -310,4 +310,36 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  
+  // Image Picker Styles
+  imagePicker: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  pickerPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  pickerPlaceholder: {
+    alignItems: 'center',
+  },
+  pickerText: {
+    marginTop: 8,
+    color: COLORS.gray400,
+    fontSize: 12,
+  },
+  pickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

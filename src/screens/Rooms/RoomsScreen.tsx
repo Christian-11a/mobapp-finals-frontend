@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   FlatList, Image, RefreshControl, Text, TextInput, TouchableOpacity,
-  View, ScrollView,
+  View, ScrollView, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +18,7 @@ const TYPES = ['All', 'Single', 'Double', 'Suite', 'Family', 'Exclusive'];
 
 export default function RoomsScreen() {
   const navigation = useNavigation<Nav>();
-  const { rooms } = useRooms();
+  const { rooms, isLoading } = useRooms();
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [maxPriceIndex, setMaxPriceIndex] = useState(PRICE_STEPS.length - 1);
@@ -42,6 +42,15 @@ export default function RoomsScreen() {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 600);
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.gold} />
+        <Text style={{ color: COLORS.gray400, marginTop: 12 }}>Finding rooms...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

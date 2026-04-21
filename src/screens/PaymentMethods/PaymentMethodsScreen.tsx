@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { userService } from '../../services/userService';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList, PaymentMethod } from '../../types';
 import { MaskedTextInput } from 'react-native-mask-text';
@@ -14,12 +15,13 @@ type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Paymen
 type FlowStep = 'selection' | 'input' | 'otp' | 'mpin' | 'success' | 'loading';
 
 export default function PaymentMethodsScreen({ navigation }: Props) {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const [flowVisible, setFlowVisible] = useState(false);
   const [activeFlow, setActiveFlow] = useState<'card' | 'gcash' | 'maya' | null>(null);
   const [step, setStep] = useState<FlowStep>('selection');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Form States
   const [phone, setPhone] = useState('');
@@ -50,9 +52,11 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     }
   };
 
-  const finalizeLinking = () => {
+  const finalizeLinking = async () => {
+    if (!user) return;
     setStep('loading');
-    setTimeout(() => {
+    
+    try {
       const newMethod: PaymentMethod = {
         id: `m_${Date.now()}`,
         type: activeFlow!,
@@ -61,13 +65,52 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
         provider: activeFlow === 'card' ? (cardNum.startsWith('4') ? 'Visa' : 'Mastercard') : undefined
       };
 
-      updateUser({ paymentMethods: [...methods, newMethod] });
+      await userService.addPaymentMethod(user.id, newMethod);
       setStep('success');
       setTimeout(() => {
         closeFlow();
         showToast(`${activeFlow?.toUpperCase()} Linked!`, 'success', 'center');
       }, 1500);
-    }, 1500);
+    } catch (error) {
+      showToast('Failed to link account', 'error');
+      setStep('input');
+    }
+  };
+
+  const handleDeleteMethod = (method: PaymentMethod) => {
+    if (!user) return;
+    Alert.alert(
+      'Remove Method',
+      `Are you sure you want to remove this ${method.type.toUpperCase()} account?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await userService.removePaymentMethod(user.id, method);
+              showToast('Method removed', 'info');
+            } catch (error) {
+              showToast('Failed to remove method', 'error');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSetDefault = async (methodId: string) => {
+    if (!user || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await userService.setDefaultPaymentMethod(user.id, methodId);
+      showToast('Default method updated', 'success');
+    } catch (error) {
+      showToast('Failed to update default method', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const closeFlow = () => {
@@ -249,7 +292,13 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
             </View>
           ) : (
             methods.map(m => (
-              <TouchableOpacity key={m.id} style={[styles.methodCard, m.isDefault && styles.methodCardDefault]} onPress={() => {}}>
+              <TouchableOpacity 
+                key={m.id} 
+                style={[styles.methodCard, m.isDefault && styles.methodCardDefault]} 
+                onPress={() => !m.isDefault && handleSetDefault(m.id)}
+                onLongPress={() => handleDeleteMethod(m)}
+                disabled={isProcessing}
+              >
                 <View style={[styles.iconBox, m.type === 'gcash' ? styles.gcashBg : (m.type === 'maya' ? styles.mayaBg : styles.cardBg)]}>
                   <Ionicons 
                     name={m.type === 'card' ? 'card' : (m.type === 'gcash' ? 'wallet' : 'flash')} 
@@ -267,17 +316,17 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
 
           <TouchableOpacity style={styles.addBtn} onPress={() => startFlow('card')} activeOpacity={0.7}>
             <Ionicons name="card-outline" size={22} color={COLORS.gold} />
-            <Text style={styles.addBtnText}>Link Credit/Debit Card</Text>
+            <Text style={addBtnStyles.addBtnText}>Link Credit/Debit Card</Text>
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity style={[styles.addBtn, { flex: 1, marginTop: 0 }]} onPress={() => startFlow('gcash')}>
               <Ionicons name="wallet-outline" size={22} color="#007dfe" />
-              <Text style={[styles.addBtnText, { color: '#007dfe' }]}>GCash</Text>
+              <Text style={[addBtnStyles.addBtnText, { color: '#007dfe' }]}>GCash</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.addBtn, { flex: 1, marginTop: 0, borderColor: '#c1ff00' }]} onPress={() => startFlow('maya')}>
               <Ionicons name="flash-outline" size={22} color="#c1ff00" />
-              <Text style={[styles.addBtnText, { color: '#c1ff00' }]}>Maya</Text>
+              <Text style={[addBtnStyles.addBtnText, { color: '#c1ff00' }]}>Maya</Text>
             </TouchableOpacity>
           </View>
           <View style={{ height: 40 }} />
@@ -294,6 +343,10 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     </View>
   );
 }
+
+const addBtnStyles = StyleSheet.create({
+  addBtnText: { fontSize: 14, fontWeight: 'bold', color: COLORS.gold, marginLeft: 8 },
+});
 
 const formStyles = {
   input: {

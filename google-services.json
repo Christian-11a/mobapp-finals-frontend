@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "646218465005",
+    "project_id": "hotel-reservation-system-6a8e3",
+    "storage_bucket": "hotel-reservation-system-6a8e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:646218465005:android:86b1f4ded13307b52796e4",
+        "android_client_info": {
+          "package_name": "com.luxestay.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVCFrcM478a-4ivNSs-dF5wrN0tQx8LZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

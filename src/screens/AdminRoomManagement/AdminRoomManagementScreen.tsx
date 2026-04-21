@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   FlatList, Modal, ScrollView, Switch, Text, TextInput,
-  TouchableOpacity, View, Image,
+  TouchableOpacity, View, Image, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
 import { Room, AdminTabParamList } from '../../types';
@@ -32,7 +33,7 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 const generateId = () => `room_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
 export default function AdminRoomManagementScreen() {
-  const { rooms, addRoom, updateRoom, deleteRoom } = useRooms();
+  const { rooms, addRoom, updateRoom, deleteRoom, uploadRoomPhoto, isLoading } = useRooms();
   const { showToast } = useToast();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<AdminTabParamList, 'AdminRooms'>>();
@@ -43,6 +44,8 @@ export default function AdminRoomManagementScreen() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [roomPhoto, setRoomPhoto] = useState<string | null>(null);
 
   // Handle direct navigation to "Add Room" modal
   useEffect(() => {
@@ -65,6 +68,7 @@ export default function AdminRoomManagementScreen() {
   const openAdd = () => {
     setEditingRoom(null);
     setForm(emptyForm());
+    setRoomPhoto(null);
     setErrors({});
     setModalVisible(true);
   };
@@ -80,8 +84,22 @@ export default function AdminRoomManagementScreen() {
       isAvailable: room.isAvailable,
       selectedAmenities: [...room.amenities],
     });
+    setRoomPhoto(room.thumbnailPic?.url || null);
     setErrors({});
     setModalVisible(true);
+  };
+
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setRoomPhoto(result.assets[0].uri);
+    }
   };
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -109,40 +127,63 @@ export default function AdminRoomManagementScreen() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) {
       showToast('Please fix the errors before saving.', 'error');
       return;
     }
-    const room: Room = {
-      id: editingRoom?.id ?? generateId(),
-      title: form.title.trim(),
-      type: form.type,
-      pricePerNight: Number(form.pricePerNight),
-      maxPeople: Number(form.maxPeople),
-      description: form.description.trim(),
-      isAvailable: form.isAvailable,
-      amenities: form.selectedAmenities,
-      photos: editingRoom?.photos ?? [],
-      thumbnailPic: editingRoom?.thumbnailPic,
-      averageRating: editingRoom?.averageRating ?? 0,
-      reviewCount: editingRoom?.reviewCount ?? 0,
-    };
-    if (editingRoom) {
-      updateRoom(room);
-      showToast('Room updated successfully.', 'success');
-    } else {
-      addRoom(room);
-      showToast('Room added successfully.', 'success');
+    
+    setLoading(true);
+    try {
+      const roomData = {
+        title: form.title.trim(),
+        type: form.type,
+        pricePerNight: Number(form.pricePerNight),
+        maxPeople: Number(form.maxPeople),
+        description: form.description.trim(),
+        isAvailable: form.isAvailable,
+        amenities: form.selectedAmenities,
+        photos: editingRoom?.photos ?? [],
+        thumbnailPic: editingRoom?.thumbnailPic,
+      };
+
+      let roomId = editingRoom?.id;
+      if (editingRoom) {
+        await updateRoom(editingRoom.id, roomData);
+      } else {
+        roomId = await addRoom(roomData);
+      }
+
+      // Handle photo upload if a new local photo was picked
+      if (roomId && roomPhoto && !roomPhoto.startsWith('http')) {
+        const photoUrl = await uploadRoomPhoto(roomId, roomPhoto);
+        await updateRoom(roomId, { 
+          thumbnailPic: { url: photoUrl },
+          photos: [{ url: photoUrl }] 
+        });
+      }
+
+      showToast(editingRoom ? 'Room updated successfully.' : 'Room added successfully.', 'success');
+      setModalVisible(false);
+    } catch (error: any) {
+      showToast(error.message || 'Failed to save room.', 'error');
+    } finally {
+      setLoading(false);
     }
-    setModalVisible(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    deleteRoom(deleteTarget);
-    setDeleteTarget(null);
-    showToast('Room deleted.', 'info');
+    setLoading(true);
+    try {
+      await deleteRoom(deleteTarget);
+      setDeleteTarget(null);
+      showToast('Room deleted.', 'info');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to delete room.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -259,6 +300,24 @@ export default function AdminRoomManagementScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalBody}>
+              {/* Photo Upload */}
+              <Text style={styles.label}>Room Photo</Text>
+              <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
+                {roomPhoto ? (
+                  <Image source={{ uri: roomPhoto }} style={styles.pickerPreview} />
+                ) : (
+                  <View style={styles.pickerPlaceholder}>
+                    <Ionicons name="camera-outline" size={32} color={COLORS.gray400} />
+                    <Text style={styles.pickerText}>Select Photo</Text>
+                  </View>
+                )}
+                {loading && (
+                  <View style={styles.pickerOverlay}>
+                    <ActivityIndicator color={COLORS.white} />
+                  </View>
+                )}
+              </TouchableOpacity>
+
               {/* Title */}
               <Text style={styles.label}>Room Title *</Text>
               <TextInput

@@ -11,6 +11,7 @@ import { RootStackParamList, MainTabParamList } from '../types';
 import LandingScreen from '../screens/Landing/LandingScreen';
 import SignInScreen from '../screens/SignIn/SignInScreen';
 import RegisterScreen from '../screens/Register/RegisterScreen';
+import SplashScreen from '../components/SplashScreen/SplashScreen';
 import HomeScreen from '../screens/Home/HomeScreen';
 import RoomsScreen from '../screens/Rooms/RoomsScreen';
 import RoomDetailScreen from '../screens/RoomDetail/RoomDetailScreen';
@@ -79,8 +80,11 @@ function GuestTabNavigator() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <SplashScreen />;
+  }
 
   return (
     <NavigationContainer>

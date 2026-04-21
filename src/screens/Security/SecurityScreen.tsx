@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { deleteStoredUser } from '../../services/authService';
+import { authService } from '../../services/authService';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
 import styles from './styles';
@@ -24,8 +24,9 @@ export default function SecurityScreen({ navigation }: Props) {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [showPws, setShowPws] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (!currentPw || !newPw || !confirmPw) {
       showToast('Please fill in all password fields.', 'info');
       return;
@@ -34,33 +35,60 @@ export default function SecurityScreen({ navigation }: Props) {
       showToast('New passwords do not match.', 'error');
       return;
     }
-    if (newPw.length < 8) {
-      showToast('Password must be at least 8 characters.', 'info');
+    if (newPw.length < 6) {
+      showToast('Password must be at least 6 characters.', 'info');
       return;
     }
 
-    // Mock update
-    showToast(isAdmin ? 'System credentials updated.' : 'Password updated successfully.', 'success');
-    setCurrentPw('');
-    setNewPw('');
-    setConfirmPw('');
+    setLoading(true);
+    try {
+      await authService.updatePassword(currentPw, newPw);
+      showToast(isAdmin ? 'System credentials updated.' : 'Password updated successfully.', 'success');
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to delete your account? This action is permanent and all your data will be lost.",
+      "Are you sure you want to delete your account? This action is permanent and all your data will be lost. Please enter your password to confirm.",
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Delete", 
           style: "destructive", 
           onPress: () => {
-            if (user?.id) {
-              deleteStoredUser(user.id);
-              logout();
-              showToast('Account deleted successfully.', 'info');
-            }
+            Alert.prompt(
+              "Confirm Password",
+              "Enter your password to delete your account",
+              [
+                { text: "Cancel", style: "cancel" },
+                { 
+                  text: "Delete", 
+                  style: "destructive",
+                  onPress: async (password?: string) => {
+                    if (!password) return;
+                    setLoading(true);
+                    try {
+                      await authService.deleteAccount(password);
+                      logout();
+                      showToast('Account deleted successfully.', 'info');
+                    } catch (err: any) {
+                      showToast(err.message, 'error');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }
+              ],
+              'secure-text'
+            );
           } 
         }
       ]

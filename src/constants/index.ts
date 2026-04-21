@@ -1,9 +1,14 @@
-// ─── Admin Credentials ────────────────────────────────────────────────────────
-export const ADMIN_EMAIL = 'admin@hotel.com';
-export const ADMIN_PASSWORD = 'Admin123!';
-
 // ─── Validation Messages ──────────────────────────────────────────────────────
 export const VALIDATION = {
+  // Auth Errors
+  INVALID_CREDENTIALS: 'Invalid email or password.',
+  EMAIL_ALREADY_IN_USE: 'This email is already registered.',
+  WEAK_PASSWORD: 'Password should be at least 6 characters.',
+  USER_NOT_FOUND: 'No account found with this email.',
+  WRONG_PASSWORD: 'Incorrect password.',
+  TOO_MANY_REQUESTS: 'Too many attempts. Please try again later.',
+  REAUTHENTICATION_REQUIRED: 'Please sign in again to perform this action.',
+  NETWORK_ERROR: 'Network error. Please check your connection.',
   // Email
   EMAIL_REQUIRED: 'Email is required.',
   EMAIL_INVALID: 'Please enter a valid email address.',
@@ -55,7 +60,6 @@ export const VALIDATION = {
   REVIEW_ALREADY_EXISTS: 'You have already reviewed this booking.',
 
   // Auth
-  INVALID_CREDENTIALS: 'Invalid email or password.',
   LOGIN_SUCCESS: 'Welcome back!',
   REGISTER_SUCCESS: 'Account created successfully!',
   LOGOUT_SUCCESS: 'You have been logged out.',

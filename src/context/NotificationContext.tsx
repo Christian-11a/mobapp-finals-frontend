@@ -1,15 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { Notification, NotificationSettings } from '../types';
 import { useAuth } from './AuthContext';
+import { useNotifications as useNotificationsHook } from '../hooks/useNotifications';
+import { notificationService } from '../services/notificationService';
+import { userService } from '../services/userService';
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  addNotification: (title: string, message: string, type: Notification['type']) => void;
+  isLoading: boolean;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  addNotification: (title: string, message: string, type: Notification['type']) => Promise<void>;
   settings: NotificationSettings;
-  updateSettings: (updates: Partial<NotificationSettings>) => void;
+  updateSettings: (updates: Partial<NotificationSettings>) => Promise<void>;
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -20,51 +24,48 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, updateUser } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 'n_001',
-      title: 'Welcome to LuxeStay!',
-      message: 'Thank you for choosing us for your premium stay. Explore our rooms and start booking today.',
-      type: 'promo',
-      createdAt: new Date().toISOString(),
-      isRead: false
-    }
-  ]);
+  const { user } = useAuth();
+  const { notifications, unreadCount, isLoading } = useNotificationsHook();
 
   const settings = user?.notificationSettings || DEFAULT_SETTINGS;
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const markAsRead = async (id: string) => {
+    if (!user) return;
+    await notificationService.markAsRead(user.id, id);
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    if (!user) return;
+    await notificationService.markAllAsRead(user.id);
   };
 
-  const addNotification = (title: string, message: string, type: Notification['type']) => {
-    const newNotif: Notification = {
-      id: `n_${Date.now()}`,
-      title,
-      message,
-      type,
-      createdAt: new Date().toISOString(),
-      isRead: false
+  const addNotification = async (title: string, message: string, type: Notification['type']) => {
+    if (!user) return;
+    await notificationService.sendNotification(user.id, title, message, type);
+  };
+
+  const updateSettings = async (updates: Partial<NotificationSettings>) => {
+    if (!user) return;
+    const newSettings = { 
+      push: { ...settings.push, ...updates.push },
+      email: { ...settings.email, ...updates.email }
     };
-    setNotifications(prev => [newNotif, ...prev]);
+    await userService.updateNotificationSettings(user.id, newSettings);
   };
 
-  const updateSettings = (updates: Partial<NotificationSettings>) => {
-    const newSettings = { ...settings, ...updates };
-    updateUser({ notificationSettings: newSettings });
-  };
+  const contextValue = useMemo(() => ({ 
+    notifications, 
+    unreadCount, 
+    isLoading,
+    markAsRead, 
+    markAllAsRead, 
+    addNotification, 
+    settings, 
+    updateSettings 
+  }), [notifications, unreadCount, isLoading, settings, user?.id]);
 
   return (
-    <NotificationContext.Provider value={{ 
-      notifications, unreadCount, markAsRead, markAllAsRead, addNotification, settings, updateSettings 
-    }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );
