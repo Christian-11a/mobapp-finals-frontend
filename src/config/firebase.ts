@@ -2,8 +2,8 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { 
   getAuth, 
   Auth, 
-  connectAuthEmulator, 
   initializeAuth, 
+  // @ts-ignore - getReactNativePersistence is available in the React Native entry point of the firebase package
   getReactNativePersistence 
 } from 'firebase/auth';
 import { 
@@ -11,11 +11,10 @@ import {
   Firestore, 
   initializeFirestore, 
   persistentLocalCache,
-  connectFirestoreEmulator,
   memoryLocalCache
 } from 'firebase/firestore';
 import { Platform } from 'react-native';
-import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getMessaging, Messaging } from 'firebase/messaging';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -56,7 +55,7 @@ if (getApps().length === 0) {
   
   // 1. Initialize Auth with Persistence for React Native
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage as any)
   });
 
   // 2. Initialize Firestore with platform-specific cache
