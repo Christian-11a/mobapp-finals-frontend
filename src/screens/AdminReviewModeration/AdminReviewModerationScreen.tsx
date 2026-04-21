@@ -11,13 +11,14 @@ import { COLORS } from '../../constants/colors';
 import { styles } from './AdminReviewModerationStyle';
 import { useNavigation } from '@react-navigation/native';
 import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
+import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
 import { Review } from '../../types';
 
 type FilterType = 'All' | 'Visible' | 'Hidden';
 const MODERATION_REASONS: Review['hiddenReason'][] = ['Abusive Language', 'Spam/Fake', 'Private Information', 'Off-topic', 'Other'];
 
 export default function AdminReviewModerationScreen() {
-  const { reviews, deleteReview, toggleReviewVisibility, addReviewReply } = useBookings();
+  const { reviews, deleteReview, toggleReviewVisibility, addReviewReply, isLoading } = useBookings();
   const { rooms } = useRooms();
   const { showToast } = useToast();
   const navigation = useNavigation();
@@ -72,11 +73,16 @@ export default function AdminReviewModerationScreen() {
     Hidden: reviews.filter(r => r.isHidden).length,
   }), [reviews]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteTarget) {
-      deleteReview(deleteTarget);
-      showToast('Review removed from system.', 'info');
-      setDeleteTarget(null);
+      try {
+        await deleteReview(deleteTarget);
+        showToast('Review removed from system.', 'info');
+      } catch (error) {
+        showToast('Failed to delete review', 'error');
+      } finally {
+        setDeleteTarget(null);
+      }
     }
   };
 
@@ -85,12 +91,26 @@ export default function AdminReviewModerationScreen() {
     setReasonModalVisible(true);
   };
 
-  const handleConfirmHide = () => {
+  const handleConfirmHide = async () => {
     if (selectedReviewForHide) {
-      toggleReviewVisibility(selectedReviewForHide, selectedReason);
-      showToast(`Review archived: ${selectedReason}`, 'success');
-      setReasonModalVisible(false);
-      setSelectedReviewForHide(null);
+      try {
+        await toggleReviewVisibility(selectedReviewForHide, true, selectedReason);
+        showToast(`Review archived: ${selectedReason}`, 'success');
+      } catch (error) {
+        showToast('Failed to archive review', 'error');
+      } finally {
+        setReasonModalVisible(false);
+        setSelectedReviewForHide(null);
+      }
+    }
+  };
+
+  const handleUnarchive = async (id: string) => {
+    try {
+      await toggleReviewVisibility(id, false);
+      showToast('Review unarchived', 'success');
+    } catch (error) {
+      showToast('Failed to unarchive review', 'error');
     }
   };
 
@@ -100,13 +120,18 @@ export default function AdminReviewModerationScreen() {
     setReplyModalVisible(true);
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (selectedReviewForReply && replyText.trim()) {
-      addReviewReply(selectedReviewForReply.id, replyText.trim());
-      showToast('Reply published successfully.', 'success');
-      setReplyModalVisible(false);
-      setSelectedReviewForReply(null);
-      setReplyText('');
+      try {
+        await addReviewReply(selectedReviewForReply.id, replyText.trim());
+        showToast('Reply published successfully.', 'success');
+      } catch (error) {
+        showToast('Failed to publish reply', 'error');
+      } finally {
+        setReplyModalVisible(false);
+        setSelectedReviewForReply(null);
+        setReplyText('');
+      }
     }
   };
 
@@ -157,96 +182,103 @@ export default function AdminReviewModerationScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={filteredReviews}
-        keyExtractor={r => r.id}
-        contentContainerStyle={styles.content}
-        ListHeaderComponent={
-          <View style={styles.distributionCard}>
-            <View style={styles.distHeader}>
-              <Text style={styles.distTitle}>Rating Distribution</Text>
-            </View>
-            {ratingStats.counts.map((count, idx) => {
-              const stars = 5 - idx;
-              const percentage = ratingStats.total > 0 ? (count / ratingStats.total) * 100 : 0;
-              return (
-                <View key={stars} style={styles.distRow}>
-                  <View style={styles.distLabel}><Text style={styles.distLabelText}>{stars}</Text><Ionicons name="star" size={10} color={COLORS.navy} /></View>
-                  <View style={styles.progressBarBg}><View style={[styles.progressBarFill, { width: `${percentage}%` }]} /></View>
-                  <Text style={styles.distCount}>{count}</Text>
-                </View>
-              );
-            })}
-          </View>
-        }
-        renderItem={({ item }) => {
-          const room = rooms.find(rm => rm.id === item.roomId);
-          return (
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewRoomHeader}>
-                <Image source={{ uri: room?.thumbnailPic?.url || room?.photos?.[0]?.url || 'https://via.placeholder.com/150' }} style={styles.roomThumbnail} />
-                <View style={styles.roomInfo}>
-                  <Text style={styles.roomTitle} numberOfLines={1}>{room?.title}</Text>
-                  <Text style={styles.roomType}>{room?.type}</Text>
-                </View>
+      {isLoading ? (
+        <View style={{ padding: 20 }}>
+          <SkeletonLoader height={200} style={{ marginBottom: 16 }} />
+          <SkeletonLoader height={200} style={{ marginBottom: 16 }} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredReviews}
+          keyExtractor={r => r.id}
+          contentContainerStyle={styles.content}
+          ListHeaderComponent={
+            <View style={styles.distributionCard}>
+              <View style={styles.distHeader}>
+                <Text style={styles.distTitle}>Rating Distribution</Text>
               </View>
-
-              <View style={styles.reviewBody}>
-                <View style={styles.userInfoRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={styles.userAvatar}><Text style={styles.userAvatarText}>{item.userName.charAt(0)}</Text></View>
-                    <View><Text style={styles.userName}>{item.userName}</Text><Text style={styles.reviewDate}>{item.createdAt}</Text></View>
+              {ratingStats.counts.map((count, idx) => {
+                const stars = 5 - idx;
+                const percentage = ratingStats.total > 0 ? (count / ratingStats.total) * 100 : 0;
+                return (
+                  <View key={stars} style={styles.distRow}>
+                    <View style={styles.distLabel}><Text style={styles.distLabelText}>{stars}</Text><Ionicons name="star" size={10} color={COLORS.navy} /></View>
+                    <View style={styles.progressBarBg}><View style={[styles.progressBarFill, { width: `${percentage}%` }]} /></View>
+                    <Text style={styles.distCount}>{count}</Text>
                   </View>
-                  {renderStars(item.rating)}
+                );
+              })}
+            </View>
+          }
+          renderItem={({ item }) => {
+            const room = rooms.find(rm => rm.id === item.roomId);
+            return (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewRoomHeader}>
+                  <Image source={{ uri: room?.thumbnailPic?.url || room?.photos?.[0]?.url || 'https://via.placeholder.com/150' }} style={styles.roomThumbnail} />
+                  <View style={styles.roomInfo}>
+                    <Text style={styles.roomTitle} numberOfLines={1}>{room?.title}</Text>
+                    <Text style={styles.roomType}>{room?.type}</Text>
+                  </View>
                 </View>
 
-                {item.isHidden && (
-                  <View style={styles.moderationMeta}>
-                    <Ionicons name="alert-circle-outline" size={14} color="#c2410c" />
-                    <Text style={styles.moderationText}>Archived: {item.hiddenReason}</Text>
-                  </View>
-                )}
-
-                <Text style={styles.reviewText}>{item.text}</Text>
-
-                {item.adminReply && (
-                  <View style={styles.replyContainer}>
-                    <View style={styles.replyHeader}>
-                      <Ionicons name="return-down-forward" size={14} color={COLORS.gold} />
-                      <Text style={styles.replyLabel}>Official Response</Text>
+                <View style={styles.reviewBody}>
+                  <View style={styles.userInfoRow}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={styles.userAvatar}><Text style={styles.userAvatarText}>{item.userName.charAt(0)}</Text></View>
+                      <View><Text style={styles.userName}>{item.userName}</Text><Text style={styles.reviewDate}>{item.createdAt}</Text></View>
                     </View>
-                    <Text style={styles.replyText}>{item.adminReply}</Text>
+                    {renderStars(item.rating)}
                   </View>
-                )}
 
-                <View style={styles.reviewActions}>
-                  <TouchableOpacity style={[styles.actionBtn, styles.replyBtn]} onPress={() => openReplyModal(item)}>
-                    <Ionicons name="chatbubble-outline" size={14} color="#0369a1" />
-                    <Text style={styles.replyBtnText}>{item.adminReply ? 'Edit Reply' : 'Reply'}</Text>
-                  </TouchableOpacity>
-                  
-                  {item.isHidden ? (
-                    <TouchableOpacity style={[styles.actionBtn, styles.hideBtn]} onPress={() => toggleReviewVisibility(item.id)}>
-                      <Ionicons name="eye-outline" size={14} color={COLORS.gray500} />
-                      <Text style={styles.hideBtnText}>Unarchive</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity style={[styles.actionBtn, styles.hideBtn]} onPress={() => openHideModal(item.id)}>
-                      <Ionicons name="archive-outline" size={14} color={COLORS.gray500} />
-                      <Text style={styles.hideBtnText}>Archive</Text>
-                    </TouchableOpacity>
+                  {item.isHidden && (
+                    <View style={styles.moderationMeta}>
+                      <Ionicons name="alert-circle-outline" size={14} color="#c2410c" />
+                      <Text style={styles.moderationText}>Archived: {item.hiddenReason}</Text>
+                    </View>
                   )}
 
-                  <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={() => setDeleteTarget(item.id)}>
-                    <Ionicons name="trash-outline" size={14} color={COLORS.red} />
-                    <Text style={styles.deleteBtnText}>Delete</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.reviewText}>{item.text}</Text>
+
+                  {item.adminReply && (
+                    <View style={styles.replyContainer}>
+                      <View style={styles.replyHeader}>
+                        <Ionicons name="return-down-forward" size={14} color={COLORS.gold} />
+                        <Text style={styles.replyLabel}>Official Response</Text>
+                      </View>
+                      <Text style={styles.replyText}>{item.adminReply}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.reviewActions}>
+                    <TouchableOpacity style={[styles.actionBtn, styles.replyBtn]} onPress={() => openReplyModal(item)}>
+                      <Ionicons name="chatbubble-outline" size={14} color="#0369a1" />
+                      <Text style={styles.replyBtnText}>{item.adminReply ? 'Edit Reply' : 'Reply'}</Text>
+                    </TouchableOpacity>
+                    
+                    {item.isHidden ? (
+                      <TouchableOpacity style={[styles.actionBtn, styles.hideBtn]} onPress={() => handleUnarchive(item.id)}>
+                        <Ionicons name="eye-outline" size={14} color={COLORS.gray500} />
+                        <Text style={styles.hideBtnText}>Unarchive</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity style={[styles.actionBtn, styles.hideBtn]} onPress={() => openHideModal(item.id)}>
+                        <Ionicons name="archive-outline" size={14} color={COLORS.gray500} />
+                        <Text style={styles.hideBtnText}>Archive</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={() => setDeleteTarget(item.id)}>
+                      <Ionicons name="trash-outline" size={14} color={COLORS.red} />
+                      <Text style={styles.deleteBtnText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-          );
-        }}
-      />
+            );
+          }}
+        />
+      )}
 
       {/* Moderation Reason Modal */}
       <Modal visible={reasonModalVisible} transparent animationType="slide">
