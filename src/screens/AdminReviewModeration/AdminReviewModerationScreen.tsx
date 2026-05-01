@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FlatList, ScrollView, Text, TextInput,
-  TouchableOpacity, View, Image, Modal,
+  TouchableOpacity, View, Image, Modal, ActivityIndicator
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +37,7 @@ export default function AdminReviewModerationScreen() {
   const [replyModalVisible, setReplyModalVisible] = useState(false);
   const [selectedReviewForReply, setSelectedReviewForReply] = useState<Review | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filteredReviews = useMemo(() => {
     return reviews.filter(r => {
@@ -94,24 +95,29 @@ export default function AdminReviewModerationScreen() {
 
   const handleConfirmHide = async () => {
     if (selectedReviewForHide) {
+      setIsProcessing(true);
       try {
         await toggleReviewVisibility(selectedReviewForHide, true, selectedReason);
         showToast(`Review archived: ${selectedReason}`, 'success');
+        setReasonModalVisible(false);
+        setSelectedReviewForHide(null);
       } catch (error) {
         showToast('Failed to archive review', 'error');
       } finally {
-        setReasonModalVisible(false);
-        setSelectedReviewForHide(null);
+        setIsProcessing(false);
       }
     }
   };
 
   const handleUnarchive = async (id: string) => {
+    setIsProcessing(true);
     try {
       await toggleReviewVisibility(id, false);
       showToast('Review unarchived', 'success');
     } catch (error) {
       showToast('Failed to unarchive review', 'error');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -123,15 +129,17 @@ export default function AdminReviewModerationScreen() {
 
   const handleSendReply = async () => {
     if (selectedReviewForReply && replyText.trim()) {
+      setIsProcessing(true);
       try {
         await addReviewReply(selectedReviewForReply.id, replyText.trim());
         showToast('Reply published successfully.', 'success');
-      } catch (error) {
-        showToast('Failed to publish reply', 'error');
-      } finally {
         setReplyModalVisible(false);
         setSelectedReviewForReply(null);
         setReplyText('');
+      } catch (error) {
+        showToast('Failed to publish reply', 'error');
+      } finally {
+        setIsProcessing(false);
       }
     }
   };
@@ -293,7 +301,17 @@ export default function AdminReviewModerationScreen() {
                 {selectedReason === r && <Ionicons name="checkmark-circle" size={20} color={COLORS.gold} />}
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmHide}><Text style={styles.confirmBtnText}>Confirm Archival</Text></TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.confirmBtn, isProcessing && { opacity: 0.7 }]} 
+              onPress={handleConfirmHide}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.confirmBtnText}>Confirm Archival</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -318,7 +336,17 @@ export default function AdminReviewModerationScreen() {
                 onChangeText={setReplyText}
                 placeholderTextColor={COLORS.gray400}
               />
-              <TouchableOpacity style={styles.confirmBtn} onPress={handleSendReply}><Text style={styles.confirmBtnText}>Publish Response</Text></TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.confirmBtn, isProcessing && { opacity: 0.7 }]} 
+                onPress={handleSendReply}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={styles.confirmBtnText}>Publish Response</Text>
+                )}
+              </TouchableOpacity>
             </KeyboardAwareScrollView>
           </View>
         </View>
