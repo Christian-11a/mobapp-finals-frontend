@@ -14,6 +14,11 @@ export default StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
     paddingBottom: 20,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 22,
     fontWeight: '700',
@@ -23,6 +28,14 @@ export default StyleSheet.create({
     fontSize: 14,
     color: '#99A1AF',
     marginTop: 4,
+  },
+  favoritesBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Tabs
