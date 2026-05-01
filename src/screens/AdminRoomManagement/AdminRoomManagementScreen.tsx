@@ -10,6 +10,7 @@ import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
 import { Room, AdminTabParamList } from '../../types';
 import { COLORS } from '../../constants/colors';
+import { formatPrice } from '../../utils/formatUtils';
 import { validateRoomTitle, validateRoomPrice } from '../../utils/validation';
 import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
 import { styles } from './AdminRoomManagementStyle';
@@ -258,7 +259,7 @@ export default function AdminRoomManagementScreen() {
 
               <View style={styles.priceRow}>
                 <Text style={styles.priceSymbol}>$</Text>
-                <Text style={styles.priceValue}>{item.pricePerNight}</Text>
+                <Text style={styles.priceValue}>{formatPrice(item.pricePerNight)}</Text>
                 <Text style={styles.priceUnit}>/night</Text>
               </View>
 

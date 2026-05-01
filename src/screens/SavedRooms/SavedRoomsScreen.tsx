@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { userService } from '../../services/userService';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 
 export default function SavedRoomsScreen() {
   const navigation = useNavigation<any>();
@@ -150,7 +151,7 @@ export default function SavedRoomsScreen() {
                   </View>
                   <Text style={roomStyles.title}>{room.title}</Text>
                   <View style={roomStyles.footer}>
-                    <Text style={roomStyles.price}>${room.pricePerNight}<Text style={roomStyles.perNight}>/night</Text></Text>
+                    <Text style={roomStyles.price}>${formatPrice(room.pricePerNight)}<Text style={roomStyles.perNight}>/night</Text></Text>
                     <View style={roomStyles.amenity}>
                       <Ionicons name="people-outline" size={14} color={COLORS.gray400} />
                       <Text style={roomStyles.amenityText}>{room.maxPeople} Guests</Text>

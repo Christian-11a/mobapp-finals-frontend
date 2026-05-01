@@ -7,6 +7,7 @@ import { useBookings } from '../../context/BookingContext';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../constants/colors';
 import { Booking, RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import EmptyState from '../../components/EmptyState/EmptyState';
 import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
 import styles from './styles';
@@ -90,8 +91,18 @@ export default function MyBookingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Reservations</Text>
-        <Text style={styles.subtitle}>{myBookings.length} total booking{myBookings.length !== 1 ? 's' : ''}</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title}>My Reservations</Text>
+            <Text style={styles.subtitle}>{myBookings.length} total booking{myBookings.length !== 1 ? 's' : ''}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.favoritesBtn}
+            onPress={() => navigation.navigate('SavedRooms')}
+          >
+            <Ionicons name="heart-outline" size={22} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Status Tabs */}
@@ -178,16 +189,18 @@ export default function MyBookingsScreen() {
                   <View style={styles.cardFooter}>
                     <View style={styles.priceContainer}>
                       <Text style={styles.paidLabel}>Total paid</Text>
-                      <Text style={styles.paidValue}>${item.totalPrice}</Text>
+                      <Text style={styles.paidValue}>${formatPrice(item.totalPrice)}</Text>
                     </View>
                     <View style={styles.actionsRow}>
-                      <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => navigation.navigate('BookingDetail', { bookingId: item.id, action: 'edit' })}
-                      >
-                        <Ionicons name="create-outline" size={14} color={COLORS.navy} style={styles.actionBtnIcon} />
-                        <Text style={styles.actionBtnText}>Edit Booking</Text>
-                      </TouchableOpacity>
+                      {item.status !== 'Cancelled' && (
+                        <TouchableOpacity
+                          style={styles.actionBtn}
+                          onPress={() => navigation.navigate('BookingDetail', { bookingId: item.id, action: 'edit' })}
+                        >
+                          <Ionicons name="create-outline" size={14} color={COLORS.navy} style={styles.actionBtnIcon} />
+                          <Text style={styles.actionBtnText}>Edit Booking</Text>
+                        </TouchableOpacity>
+                      )}
                       {item.status !== 'Cancelled' && item.status !== 'Completed' && (
                         <TouchableOpacity
                           style={[styles.actionBtn, styles.actionBtnCancel]}

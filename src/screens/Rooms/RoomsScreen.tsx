@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRooms } from '../../context/RoomContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import styles from './styles';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -97,7 +98,7 @@ export default function RoomsScreen() {
             </ScrollView>
 
             <Text style={styles.filterLabel}>
-              Max Price: <Text style={styles.filterValue}>${maxPrice}/night</Text>
+              Max Price: <Text style={styles.filterValue}>${formatPrice(maxPrice)}/night</Text>
             </Text>
             <View style={styles.sliderRow}>
               {PRICE_STEPS.map((_, i) => (
@@ -153,7 +154,7 @@ export default function RoomsScreen() {
               <View style={styles.row}>
                 <Text style={styles.name}>{item.title}</Text>
                 <View>
-                  <Text style={styles.price}>${item.pricePerNight}</Text>
+                  <Text style={styles.price}>${formatPrice(item.pricePerNight)}</Text>
                   <Text style={styles.perNight}>/night</Text>
                 </View>
               </View>

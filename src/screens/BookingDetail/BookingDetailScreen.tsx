@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../constants/colors';
 import { VALIDATION } from '../../constants';
 import { validateReviewRating, validateReviewText } from '../../utils/validation';
+import { formatPrice } from '../../utils/formatUtils';
 import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
 import styles from './styles';
 
@@ -225,26 +226,26 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>PRICE BREAKDOWN</Text>
             <View style={styles.row}>
-              <Text style={styles.rowLabel}>${booking.room.pricePerNight} × {originalNights} night{originalNights > 1 ? 's' : ''}</Text>
-              <Text style={styles.rowValue}>${booking.totalPrice}</Text>
+              <Text style={styles.rowLabel}>${formatPrice(booking.room.pricePerNight)} × {originalNights} night{originalNights > 1 ? 's' : ''}</Text>
+              <Text style={styles.rowValue}>${formatPrice(booking.totalPrice)}</Text>
             </View>
             {booking.status === 'Cancelled' && (
               <>
                 <View style={styles.row}>
                   <Text style={styles.rowLabel}>Cancellation Fee (15%)</Text>
-                  <Text style={[styles.rowValue, { color: COLORS.red }]}>-${cancellationFee}</Text>
+                  <Text style={[styles.rowValue, { color: COLORS.red }]}>-${formatPrice(cancellationFee)}</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.row}>
                   <Text style={styles.rowLabel}>Refund Amount</Text>
-                  <Text style={[styles.rowValue, { color: COLORS.green }]}>${refundAmount}</Text>
+                  <Text style={[styles.rowValue, { color: COLORS.green }]}>${formatPrice(refundAmount)}</Text>
                 </View>
               </>
             )}
             <View style={styles.divider} />
             <View style={styles.row}>
               <Text style={styles.totalLabel}>Total Paid</Text>
-              <Text style={styles.totalValue}>${booking.totalPrice}</Text>
+              <Text style={styles.totalValue}>${formatPrice(booking.totalPrice)}</Text>
             </View>
           </View>
 
@@ -311,7 +312,7 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
       <ConfirmationModal
         visible={cancelModal}
         title="Cancel Booking?"
-        message={`A cancellation fee of $${cancellationFee} (15%) will be charged.\n\nYou will receive a refund of $${refundAmount}.`}
+        message={`A cancellation fee of $${formatPrice(cancellationFee)} (15%) will be charged.\n\nYou will receive a refund of $${formatPrice(refundAmount)}.`}
         confirmText="Yes, Cancel"
         cancelText="Keep Booking"
         confirmColor={COLORS.red}
@@ -393,12 +394,12 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
                   styles.previewValue,
                   { color: priceDiff > 0 ? COLORS.red : priceDiff < 0 ? COLORS.green : COLORS.navy }
                 ]}>
-                  {priceDiff > 0 ? `+$${priceDiff}` : priceDiff < 0 ? `-$${Math.abs(priceDiff)}` : 'No change'}
+                  {priceDiff > 0 ? `+$${formatPrice(priceDiff)}` : priceDiff < 0 ? `-$${formatPrice(Math.abs(priceDiff))}` : 'No change'}
                 </Text>
               </View>
               <View style={styles.previewRow}>
                 <Text style={styles.previewTotalLabel}>New Total</Text>
-                <Text style={styles.previewTotalValue}>${newTotalPrice}</Text>
+                <Text style={styles.previewTotalValue}>${formatPrice(newTotalPrice)}</Text>
               </View>
             </View>
 

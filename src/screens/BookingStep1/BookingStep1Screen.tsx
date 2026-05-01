@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { styles } from './styles';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
 import { useBookings } from '../../context/BookingContext';
@@ -166,7 +167,7 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
             <Text style={styles.roomMeta}>Floor High · Premium</Text>
           </View>
           <View style={styles.priceInfo}>
-            <Text style={styles.priceText}>${room.pricePerNight}</Text>
+            <Text style={styles.priceText}>${formatPrice(room.pricePerNight)}</Text>
             <Text style={styles.perNight}>/night</Text>
           </View>
         </View>
@@ -224,17 +225,17 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
           <View style={styles.breakdown}>
             <Text style={styles.breakdownTitle}>Price Breakdown</Text>
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>${room.pricePerNight} x {nights} nights</Text>
-              <Text style={styles.breakdownValue}>${basePrice.toFixed(2)}</Text>
+              <Text style={styles.breakdownLabel}>${formatPrice(room.pricePerNight)} x {nights} nights</Text>
+              <Text style={styles.breakdownValue}>${formatPrice(basePrice)}</Text>
             </View>
             <View style={styles.breakdownRow}>
               <Text style={styles.breakdownLabel}>Taxes & Fees (12%)</Text>
-              <Text style={styles.breakdownValue}>${tax.toFixed(2)}</Text>
+              <Text style={styles.breakdownValue}>${formatPrice(tax)}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.breakdownRow}>
               <Text style={styles.totalLabel}>Total Price</Text>
-              <Text style={styles.totalValue}>${totalPrice.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>${formatPrice(totalPrice)}</Text>
             </View>
           </View>
         )}

@@ -7,6 +7,7 @@ import { useRooms } from '../../context/RoomContext';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { COLORS } from '../../constants/colors';
+import { formatPrice } from '../../utils/formatUtils';
 import { styles } from './AdminDashboardStyle';
 import { useNavigation } from '@react-navigation/native';
 
@@ -148,7 +149,7 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.statBadgeText}>+12.5%</Text>
                 </View>
               </View>
-              <Text style={styles.statValue}>${totalRevenue.toLocaleString()}</Text>
+              <Text style={styles.statValue}>${formatPrice(totalRevenue)}</Text>
               <Text style={styles.statLabel}>Revenue</Text>
             </View>
             <View style={styles.statCard}>
@@ -292,7 +293,7 @@ export default function AdminDashboardScreen() {
                         </Text>
                       </View>
                       <View style={styles.recentBookingRight}>
-                        <Text style={styles.recentBookingPrice}>${b.totalPrice.toLocaleString()}</Text>
+                        <Text style={styles.recentBookingPrice}>${formatPrice(b.totalPrice)}</Text>
                         <View style={[styles.statBadge, { backgroundColor: statusConfig.bg, paddingVertical: 2 }]}>
                           <Text style={[styles.statBadgeText, { color: statusConfig.text, fontSize: 10 }]}>{b.status}</Text>
                         </View>

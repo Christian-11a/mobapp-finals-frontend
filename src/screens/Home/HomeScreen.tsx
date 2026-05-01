@@ -12,11 +12,12 @@ import { useNotifications } from '../../context/NotificationContext';
 import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import styles from './styles';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const CATEGORIES = ['All', 'Standard', 'Deluxe', 'Suite', 'Villa', 'Penthouse'];
+const CATEGORIES = ['All', 'Popular', 'Top Rated', 'Luxury', 'Standard', 'Suites', 'Family'];
 const PRICE_RANGES = [
   { label: 'Any', min: 0, max: 10000 },
   { label: 'Under $300', min: 0, max: 300 },
@@ -104,7 +105,24 @@ export default function HomeScreen() {
   const filteredRooms = useMemo(() => {
     let result = rooms.filter(r => {
       const matchSearch = r.title.toLowerCase().includes(search.toLowerCase());
-      const matchCategory = selectedCategory === 'All' || r.type === selectedCategory;
+      
+      let matchCategory = true;
+      if (selectedCategory === 'Popular') {
+        matchCategory = (r.reviewCount || 0) >= 50;
+      } else if (selectedCategory === 'Top Rated') {
+        matchCategory = r.averageRating >= 4.7 || r.isTopRated;
+      } else if (selectedCategory === 'Luxury') {
+        matchCategory = r.type === 'Exclusive' || r.pricePerNight >= 400;
+      } else if (selectedCategory === 'Standard') {
+        matchCategory = r.type === 'Single' || r.type === 'Double';
+      } else if (selectedCategory === 'Suites') {
+        matchCategory = r.type === 'Suite';
+      } else if (selectedCategory === 'Family') {
+        matchCategory = r.type === 'Family' || r.maxPeople >= 4;
+      } else if (selectedCategory !== 'All') {
+        matchCategory = r.type === selectedCategory;
+      }
+
       const matchPrice = r.pricePerNight >= activePriceRange.min && r.pricePerNight <= activePriceRange.max;
       const matchAvailable = !activeAvailableOnly || r.isAvailable;
       return matchSearch && matchCategory && matchPrice && matchAvailable;
@@ -259,9 +277,6 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Featured Rooms</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAll}>See all</Text>
-              </TouchableOpacity>
             </View>
             <ScrollView 
               horizontal 
@@ -286,7 +301,7 @@ export default function HomeScreen() {
                     />
                   </TouchableOpacity>
                   <View style={styles.priceBadge}>
-                    <Text style={styles.priceText}>${room.pricePerNight}</Text>
+                    <Text style={styles.priceText}>${formatPrice(room.pricePerNight)}</Text>
                   </View>
                   <View style={styles.featuredInfo}>
                     <Text style={styles.featuredType}>{room.type}</Text>
@@ -348,7 +363,7 @@ export default function HomeScreen() {
                 <Text style={styles.roomTitle} numberOfLines={1}>{room.title}</Text>
                 <View style={styles.roomFooter}>
                   <Text style={styles.roomPrice}>
-                    ${room.pricePerNight}<Text style={styles.perNight}>/night</Text>
+                    ${formatPrice(room.pricePerNight)}<Text style={styles.perNight}>/night</Text>
                   </Text>
                   <View style={styles.amenityItem}>
                     <Ionicons name="people-outline" size={14} color={COLORS.gray400} />

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useBookings } from '../../context/BookingContext';
 import { useToast } from '../../context/ToastContext';
 import { COLORS } from '../../constants/colors';
+import { formatPrice } from '../../utils/formatUtils';
 import { styles } from './AdminBookingManagementStyle';
 import { useNavigation } from '@react-navigation/native';
 import SkeletonLoader from '../../components/SkeletonLoader/SkeletonLoader';
@@ -84,7 +85,7 @@ export default function AdminBookingManagementScreen() {
         <View style={styles.headerTop}>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>All Bookings</Text>
-            <Text style={styles.headerSubtitle}>Revenue: ${totalRevenue.toLocaleString()}</Text>
+            <Text style={styles.headerSubtitle}>Revenue: ${formatPrice(totalRevenue)}</Text>
           </View>
           <TouchableOpacity style={styles.filterButton}>
             <Ionicons name="filter" size={14} color={COLORS.gold} />
@@ -189,7 +190,7 @@ export default function AdminBookingManagementScreen() {
                   <View style={styles.cardFooter}>
                     <View style={styles.totalSection}>
                       <Text style={styles.totalLabel}>Total</Text>
-                      <Text style={styles.totalValue}>${item.totalPrice.toLocaleString()}</Text>
+                      <Text style={styles.totalValue}>${formatPrice(item.totalPrice)}</Text>
                     </View>
                     <TouchableOpacity 
                       style={styles.updateStatusBtn}

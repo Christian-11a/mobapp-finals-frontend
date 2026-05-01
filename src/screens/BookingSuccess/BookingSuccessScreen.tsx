@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useBookings } from '../../context/BookingContext';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import { styles } from './BookingSuccessStyle';
 
 type Props = {
@@ -68,7 +69,7 @@ export default function BookingSuccessScreen({ navigation, route }: Props) {
           <View style={styles.divider} />
           <View style={styles.detailRow}>
             <Text style={styles.totalLabel}>Total Paid</Text>
-            <Text style={styles.totalValue}>${booking.totalPrice}</Text>
+            <Text style={styles.totalValue}>${formatPrice(booking.totalPrice)}</Text>
           </View>
         </View>
 

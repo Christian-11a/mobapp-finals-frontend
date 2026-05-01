@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { COLORS } from '../../constants/colors';
+import { formatPrice } from '../../utils/formatUtils';
 import styles from './styles';
 
 type Props = {
@@ -131,7 +132,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
           <View style={styles.titleRow}>
             <Text style={styles.title}>{room.title}</Text>
             <View style={styles.priceContainer}>
-              <Text style={styles.priceText}>{getCurrencySymbol()}{room.pricePerNight}</Text>
+              <Text style={styles.priceText}>{getCurrencySymbol()}{formatPrice(room.pricePerNight)}</Text>
               <Text style={styles.perNightText}>per night</Text>
             </View>
           </View>
@@ -238,7 +239,7 @@ export default function RoomDetailScreen({ navigation, route }: Props) {
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.bottomBarLabel}>Starting from</Text>
-          <Text style={styles.bottomBarPrice}>{getCurrencySymbol()}{room.pricePerNight}<Text style={styles.bottomBarPerNight}>/night</Text></Text>
+          <Text style={styles.bottomBarPrice}>{getCurrencySymbol()}{formatPrice(room.pricePerNight)}<Text style={styles.bottomBarPerNight}>/night</Text></Text>
         </View>
         <TouchableOpacity 
           style={[styles.bookBtn, (!room.isAvailable) && styles.bookBtnDisabled]} 

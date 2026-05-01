@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from './styles';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList } from '../../types';
+import { formatPrice } from '../../utils/formatUtils';
 import { useAuth } from '../../context/AuthContext';
 
 type Props = {
@@ -92,7 +93,7 @@ export default function BookingStep2Screen({ navigation, route }: Props) {
             <Text style={styles.roomMeta}>Floor {room.floor} · {room.bedType}</Text>
           </View>
           <View style={styles.priceInfo}>
-            <Text style={styles.priceText}>${room.price}</Text>
+            <Text style={styles.priceText}>${formatPrice(room.price)}</Text>
             <Text style={styles.perNight}>/night</Text>
           </View>
         </View>
