@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ScrollView, Text, TextInput, TouchableOpacity, View, 
-  StatusBar, Platform, Alert, StyleSheet
+  StatusBar, Platform, Alert, StyleSheet, ActivityIndicator
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -150,8 +150,17 @@ export default function SecurityScreen({ navigation }: Props) {
             {renderInput('New Password', newPw, setNewPw, 'Min. 8 characters')}
             {renderInput('Confirm New Password', confirmPw, setConfirmPw, 'Repeat new password')}
             
-            <TouchableOpacity style={styles.saveBtn} onPress={handleUpdatePassword} activeOpacity={0.8}>
-              <Text style={styles.saveBtnText}>{isAdmin ? 'Update Credentials' : 'Update Password'}</Text>
+            <TouchableOpacity 
+              style={[styles.saveBtn, loading && { opacity: 0.7 }]} 
+              onPress={handleUpdatePassword} 
+              activeOpacity={0.8}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.saveBtnText}>{isAdmin ? 'Update Credentials' : 'Update Password'}</Text>
+              )}
             </TouchableOpacity>
           </View>
 
