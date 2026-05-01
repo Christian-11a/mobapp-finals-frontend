@@ -119,9 +119,7 @@ export default function HomeScreen() {
         matchCategory = r.type === 'Suite';
       } else if (selectedCategory === 'Family') {
         matchCategory = r.type === 'Family' || r.maxPeople >= 4;
-      } else if (selectedCategory !== 'All') {
-        matchCategory = r.type === selectedCategory;
-      }
+      } 
 
       const matchPrice = r.pricePerNight >= activePriceRange.min && r.pricePerNight <= activePriceRange.max;
       const matchAvailable = !activeAvailableOnly || r.isAvailable;
