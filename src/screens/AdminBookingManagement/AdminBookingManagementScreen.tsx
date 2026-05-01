@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   FlatList, Modal, ScrollView, Text, TextInput,
-  TouchableOpacity, View, Image, ImageBackground,
+  TouchableOpacity, View, Image, ImageBackground, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookings } from '../../context/BookingContext';
@@ -37,6 +37,7 @@ export default function AdminBookingManagementScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
@@ -62,14 +63,16 @@ export default function AdminBookingManagementScreen() {
 
   const onStatusSelect = async (status: Booking['status']) => {
     if (selectedBooking) {
+      setIsUpdating(status);
       try {
         await updateBookingStatus(selectedBooking.id, status);
         showToast(`Booking status updated to ${status}`, 'success');
+        setStatusModalVisible(false);
+        setSelectedBooking(null);
       } catch (error) {
         showToast('Failed to update status', 'error');
       } finally {
-        setStatusModalVisible(false);
-        setSelectedBooking(null);
+        setIsUpdating(null);
       }
     }
   };
@@ -232,17 +235,28 @@ export default function AdminBookingManagementScreen() {
               {Object.keys(STATUS_CONFIG).map((s) => {
                 const config = STATUS_CONFIG[s];
                 const isActive = selectedBooking?.status === s;
+                const updatingThis = isUpdating === s;
+
                 return (
                   <TouchableOpacity
                     key={s}
-                    style={[styles.statusOption, isActive && styles.statusOptionActive]}
+                    style={[
+                      styles.statusOption, 
+                      isActive && styles.statusOptionActive,
+                      !!isUpdating && { opacity: 0.6 }
+                    ]}
                     onPress={() => onStatusSelect(s as Booking['status'])}
+                    disabled={!!isUpdating}
                   >
-                    <Ionicons name={config.icon as any} size={18} color={isActive ? config.text : COLORS.navy} />
-                    <Text style={[styles.statusOptionText, isActive && styles.statusOptionTextActive]}>
+                    {updatingThis ? (
+                      <ActivityIndicator size="small" color={COLORS.gold} style={{ marginRight: 12 }} />
+                    ) : (
+                      <Ionicons name={config.icon as any} size={18} color={isActive ? config.text : COLORS.navy} style={{ marginRight: 12 }} />
+                    )}
+                    <Text style={[styles.statusOptionText, isActive && styles.statusOptionTextActive, { flex: 1 }]}>
                       {s}
                     </Text>
-                    {isActive && <Text style={styles.currentLabel}>(current)</Text>}
+                    {isActive && !updatingThis && <Text style={styles.currentLabel}>(current)</Text>}
                   </TouchableOpacity>
                 );
               })}
