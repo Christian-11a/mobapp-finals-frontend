@@ -1,7 +1,6 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { roomRepository } from '../repositories/roomRepository';
-import { storage } from '../config/firebase';
+import { cloudinaryService } from './cloudinaryService';
 import { Room } from '../types';
 
 export const roomService = {
@@ -57,33 +56,23 @@ export const roomService = {
   },
 
   /**
-   * Compresses and uploads a room photo to Firebase Storage
+   * Compresses and uploads a room photo to Cloudinary.
+   * This is compatible with Expo Go and avoids native Firebase Storage issues.
    */
   uploadRoomPhoto: async (roomId: string, localUri: string): Promise<string> => {
     try {
-      // 1. Compress and resize image (max 1MB goal)
+      // 1. Compress and resize image
       const manipResult = await ImageManipulator.manipulateAsync(
         localUri,
         [{ resize: { width: 1200 } }],
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      // 2. Prepare storage reference
-      const filename = `${Date.now()}.jpg`;
-      const storageRef = ref(storage, `rooms/${roomId}/${filename}`);
-
-      // 3. Convert uri to blob
-      const response = await fetch(manipResult.uri);
-      const blob = await response.blob();
-
-      // 4. Upload to Firebase Storage
-      await uploadBytes(storageRef, blob);
-
-      // 5. Get and return download URL
-      return await getDownloadURL(storageRef);
-    } catch (error) {
+      // 2. Upload to Cloudinary using existing service
+      return await cloudinaryService.uploadImage(manipResult.uri, 'rooms');
+    } catch (error: any) {
       console.error('Error uploading room photo:', error);
-      throw new Error('Failed to upload room photo. Please try again.');
+      throw new Error(`Failed to upload room photo: ${error.message || 'Unknown error'}`);
     }
   }
 };

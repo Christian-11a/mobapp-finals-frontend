@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Image,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,10 +44,7 @@ export default function BookingStep2Screen({ navigation, route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
@@ -81,7 +78,11 @@ export default function BookingStep2Screen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Room Summary Card */}
         <View style={styles.summaryCard}>
           <Image source={{ uri: room.image }} style={styles.roomThumb} />
@@ -156,7 +157,7 @@ export default function BookingStep2Screen({ navigation, route }: Props) {
         </View>
         
         <View style={{ height: 120 }} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
@@ -164,6 +165,6 @@ export default function BookingStep2Screen({ navigation, route }: Props) {
           <Text style={styles.continueBtnText}>Continue to Payment</Text>
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

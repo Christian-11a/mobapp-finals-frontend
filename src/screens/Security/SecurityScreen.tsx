@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { 
   ScrollView, Text, TextInput, TouchableOpacity, View, 
-  StatusBar, KeyboardAvoidingView, Platform, Alert, StyleSheet
+  StatusBar, Platform, Alert, StyleSheet, ActivityIndicator
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -121,13 +122,14 @@ export default function SecurityScreen({ navigation }: Props) {
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
-        <StatusBar barStyle="light-content" />
-        
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <KeyboardAwareScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false} 
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerCircle1} />
@@ -148,8 +150,17 @@ export default function SecurityScreen({ navigation }: Props) {
             {renderInput('New Password', newPw, setNewPw, 'Min. 8 characters')}
             {renderInput('Confirm New Password', confirmPw, setConfirmPw, 'Repeat new password')}
             
-            <TouchableOpacity style={styles.saveBtn} onPress={handleUpdatePassword} activeOpacity={0.8}>
-              <Text style={styles.saveBtnText}>{isAdmin ? 'Update Credentials' : 'Update Password'}</Text>
+            <TouchableOpacity 
+              style={[styles.saveBtn, loading && { opacity: 0.7 }]} 
+              onPress={handleUpdatePassword} 
+              activeOpacity={0.8}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.saveBtnText}>{isAdmin ? 'Update Credentials' : 'Update Password'}</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -188,8 +199,8 @@ export default function SecurityScreen({ navigation }: Props) {
 
           <View style={{ height: 40 }} />
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 

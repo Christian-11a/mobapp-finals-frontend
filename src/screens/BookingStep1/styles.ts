@@ -198,13 +198,12 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.navy,
   },
-  maxCapacity: {
+  guestLimit: {
     fontSize: 12,
     color: COLORS.gray500,
-    marginTop: 8,
-    marginLeft: 4,
+    marginLeft: 12,
   },
-  breakdownCard: {
+  breakdown: {
     backgroundColor: 'rgba(10, 30, 61, 0.03)',
     borderWidth: 1,
     borderColor: 'rgba(10, 30, 61, 0.08)',
@@ -231,6 +230,11 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6A7282',
   },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(10, 30, 61, 0.08)',
+    marginVertical: 12,
+  },
   totalLabel: {
     fontSize: 16,
     fontWeight: '700',
@@ -241,11 +245,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.gold,
   },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  footer: {
     backgroundColor: COLORS.white,
     paddingHorizontal: 20,
     paddingTop: 15,
@@ -260,7 +260,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  continueBtnText: {
+  continueText: {
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',

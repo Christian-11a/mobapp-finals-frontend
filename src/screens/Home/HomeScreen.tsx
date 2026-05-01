@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity,
-  View, Modal, StatusBar, ActivityIndicator
+  View, Modal, StatusBar, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [tempPriceRange, setTempPriceRange] = useState(PRICE_RANGES[0]);
   const [tempSortBy, setTempSortBy] = useState('Rating');
@@ -78,6 +79,14 @@ export default function HomeScreen() {
   const [activeAvailableOnly, setActiveAvailableOnly] = useState(false);
 
   const savedIds = user?.savedRoomIds || [];
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Real-time subscription handles data updates, but we provide visual feedback
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
 
   const toggleSave = (roomId: string) => {
     const isSaved = savedIds.includes(roomId);
@@ -216,7 +225,18 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.gold}
+            colors={[COLORS.gold]}
+          />
+        }
+      >
         {/* Category Tabs */}
         <View style={styles.categoriesContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

@@ -116,8 +116,15 @@ export default function AdminDashboardScreen() {
               </Text>
               <Text style={styles.headerTitle}>{config.hotelName}</Text>
             </View>
-            <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('AdminProfile')}>
-              <Text style={styles.avatarText}>{user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}</Text>
+            <TouchableOpacity 
+              style={[styles.avatarContainer, user?.avatarUrl ? { padding: 0, overflow: 'hidden' } : null]} 
+              onPress={() => navigation.navigate('AdminProfile')}
+            >
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <Text style={styles.avatarText}>{user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}</Text>
+              )}
             </TouchableOpacity>
           </View>
           <View style={styles.roleContainer}>

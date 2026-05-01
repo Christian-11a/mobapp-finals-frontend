@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Image,
   Modal,
@@ -47,8 +47,11 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
 
   if (!room) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const nights =
     checkIn && checkOut
@@ -97,6 +100,24 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
       showToast('Failed to verify room availability. Please try again.', 'error');
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  const onDateChange = (type: 'in' | 'out') => (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      type === 'in' ? setShowCheckIn(false) : setShowCheckOut(false);
+    }
+    
+    if (date) {
+      if (type === 'in') {
+        setCheckIn(date);
+        // Reset checkout if it's now before or same as checkin
+        if (checkOut && date >= checkOut) {
+          setCheckOut(new Date(date.getTime() + 86400000));
+        }
+      } else {
+        setCheckOut(date);
+      }
     }
   };
 
@@ -155,10 +176,7 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
           <Text style={styles.label}>CHECK-IN DATE</Text>
           <TouchableOpacity
             style={styles.dateInput}
-            onPress={() => {
-              if (!checkIn) setCheckIn(today);
-              setShowCheckIn(true);
-            }}
+            onPress={() => setShowCheckIn(true)}
           >
             <Ionicons name="calendar-outline" size={20} color={COLORS.gold} style={styles.inputIcon} />
             <Text style={checkIn ? styles.inputValue : styles.inputPlaceholder}>
@@ -171,10 +189,7 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
           <Text style={styles.label}>CHECK-OUT DATE</Text>
           <TouchableOpacity
             style={styles.dateInput}
-            onPress={() => {
-              if (!checkOut) setCheckOut(new Date((checkIn || today).getTime() + 86400000));
-              setShowCheckOut(true);
-            }}
+            onPress={() => setShowCheckOut(true)}
           >
             <Ionicons name="calendar-outline" size={20} color={COLORS.gold} style={styles.inputIcon} />
             <Text style={checkOut ? styles.inputValue : styles.inputPlaceholder}>
@@ -228,45 +243,70 @@ export default function BookingStep1Screen({ navigation, route }: Props) {
       </ScrollView>
 
       {/* Date Pickers */}
-      <Modal visible={showCheckIn} transparent animationType="slide">
-        <View style={pickerOverlay}>
-          <View style={pickerSheet}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', padding: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Select Check-in</Text>
-              <TouchableOpacity onPress={() => setShowCheckIn(false)}>
-                <Text style={{ color: COLORS.gold, fontWeight: 'bold' }}>Done</Text>
-              </TouchableOpacity>
+      {Platform.OS === 'ios' ? (
+        <>
+          <Modal visible={showCheckIn} transparent animationType="slide">
+            <View style={pickerOverlay}>
+              <View style={pickerSheet}>
+                <View style={styles.pickerHeader}>
+                  <Text style={styles.pickerTitle}>Select Check-in</Text>
+                  <TouchableOpacity onPress={() => setShowCheckIn(false)}>
+                    <Text style={styles.pickerDone}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={checkIn || today}
+                  mode="date"
+                  display="spinner"
+                  onChange={onDateChange('in')}
+                  minimumDate={today}
+                />
+              </View>
             </View>
+          </Modal>
+
+          <Modal visible={showCheckOut} transparent animationType="slide">
+            <View style={pickerOverlay}>
+              <View style={pickerSheet}>
+                <View style={styles.pickerHeader}>
+                  <Text style={styles.pickerTitle}>Select Check-out</Text>
+                  <TouchableOpacity onPress={() => setShowCheckOut(false)}>
+                    <Text style={styles.pickerDone}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={checkOut || new Date((checkIn || today).getTime() + 86400000)}
+                  mode="date"
+                  display="spinner"
+                  onChange={onDateChange('out')}
+                  minimumDate={checkIn ? new Date(checkIn.getTime() + 86400000) : today}
+                />
+              </View>
+            </View>
+          </Modal>
+        </>
+      ) : (
+        <>
+          {showCheckIn && (
             <DateTimePicker
               value={checkIn || today}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(_, date) => setCheckIn(date || checkIn)}
+              display="default"
+              onChange={onDateChange('in')}
               minimumDate={today}
             />
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showCheckOut} transparent animationType="slide">
-        <View style={pickerOverlay}>
-          <View style={pickerSheet}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', padding: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Select Check-out</Text>
-              <TouchableOpacity onPress={() => setShowCheckOut(false)}>
-                <Text style={{ color: COLORS.gold, fontWeight: 'bold' }}>Done</Text>
-              </TouchableOpacity>
-            </View>
+          )}
+          {showCheckOut && (
             <DateTimePicker
               value={checkOut || new Date((checkIn || today).getTime() + 86400000)}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(_, date) => setCheckOut(date || checkOut)}
+              display="default"
+              onChange={onDateChange('out')}
               minimumDate={checkIn ? new Date(checkIn.getTime() + 86400000) : today}
             />
-          </View>
-        </View>
-      </Modal>
+          )}
+        </>
+      )}
 
       {/* Continue Button */}
       <View style={styles.footer}>

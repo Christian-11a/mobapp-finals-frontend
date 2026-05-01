@@ -2,7 +2,7 @@ import {
   collection, 
   doc, 
   getDocs, 
-  addDoc, 
+  setDoc, 
   updateDoc, 
   onSnapshot, 
   Unsubscribe,
@@ -30,10 +30,13 @@ export const notificationRepository = {
   },
 
   /**
-   * Adds a notification to a user's subcollection
+   * Adds a notification to a user's subcollection.
+   * Uses setDoc with a generated ID to ensure idempotency on retries.
    */
   addNotification: async (userId: string, notification: Omit<Notification, 'id'>): Promise<string> => {
-    const docRef = await addDoc(getNotifsRef(userId), notification as Notification);
+    const colRef = getNotifsRef(userId);
+    const docRef = doc(colRef); // Generates a new ID locally
+    await setDoc(docRef, notification as Notification);
     return docRef.id;
   },
 

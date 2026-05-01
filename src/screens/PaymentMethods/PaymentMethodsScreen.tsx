@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { 
+  ScrollView, 
+  Text, 
+  TouchableOpacity, 
+  View, 
+  StatusBar, 
+  Alert, 
+  Modal, 
+  TextInput, 
+  ActivityIndicator, 
+  Platform, 
+  StyleSheet 
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -63,7 +76,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
       else if (step === 'mpin') finalizeLinking();
     } else {
       if (step === 'input') {
-        setStep('loading');
+        setIsProcessing(true);
         // Skip OTP for cards as per request
         setTimeout(() => finalizeLinking(), 1500); 
       } else if (step === 'otp') finalizeLinking();
@@ -72,8 +85,17 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
 
   const finalizeLinking = async () => {
     if (!user) return;
+    setIsProcessing(true);
     setStep('loading');
     
+    const timeoutId = setTimeout(() => {
+      if (step === 'loading') {
+        showToast('Linking timed out. Please check your connection.', 'error');
+        setStep('input');
+        setIsProcessing(false);
+      }
+    }, 15000);
+
     try {
       const newMethod: PaymentMethod = {
         id: `m_${Date.now()}`,
@@ -87,14 +109,18 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
       }
 
       await userService.addPaymentMethod(user.id, newMethod);
+      clearTimeout(timeoutId);
       setStep('success');
       setTimeout(() => {
         closeFlow();
         showToast(`${activeFlow?.toUpperCase()} Linked!`, 'success', 'center');
       }, 1500);
-    } catch (error) {
-      showToast('Failed to link account', 'error');
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      console.error('[PaymentMethods] Linking failed:', error);
+      showToast(error.message || 'Failed to link account. Please try again.', 'error');
       setStep('input');
+      setIsProcessing(false);
     }
   };
 
@@ -139,11 +165,12 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     setStep('selection');
     setActiveFlow(null);
     setPhone(''); setOtp(''); setMpin(''); setCardNum(''); setExpiry(''); setCvv('');
+    setIsProcessing(false);
   };
 
   const getBrandColor = () => {
     if (activeFlow === 'gcash') return '#007dfe';
-    if (activeFlow === 'maya') return '#c1ff00';
+    if (activeFlow === 'maya') return '#2db533'; // Darker green for visibility
     return COLORS.navy;
   };
 
@@ -170,7 +197,11 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={{ padding: 24 }}>
+      <KeyboardAwareScrollView 
+        contentContainerStyle={{ padding: 24 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         <View style={{ width: 40, height: 4, backgroundColor: COLORS.gray200, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
         
         {/* Header Label */}
@@ -280,20 +311,32 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
 
         {/* Action Buttons */}
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 32 }}>
-          <TouchableOpacity style={{ flex: 1, padding: 18, alignItems: 'center' }} onPress={closeFlow}>
+          <TouchableOpacity 
+            style={{ flex: 1, padding: 18, alignItems: 'center' }} 
+            onPress={closeFlow}
+            disabled={isProcessing}
+          >
             <Text style={{ fontWeight: 'bold', color: COLORS.gray400 }}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={{ flex: 2, backgroundColor: getBrandColor(), padding: 18, borderRadius: 16, alignItems: 'center' }}
+            style={[
+              { flex: 2, backgroundColor: getBrandColor(), padding: 18, borderRadius: 16, alignItems: 'center' },
+              isProcessing && { opacity: 0.7 }
+            ]}
             onPress={handleNextStep}
+            disabled={isProcessing}
           >
-            <Text style={{ fontWeight: 'bold', color: activeFlow === 'maya' ? COLORS.navy : COLORS.white }}>
-              {step === 'input' ? 'Continue' : 'Verify & Link'}
-            </Text>
+            {isProcessing ? (
+              <ActivityIndicator color={activeFlow === 'maya' ? COLORS.navy : COLORS.white} />
+            ) : (
+              <Text style={{ fontWeight: 'bold', color: activeFlow === 'maya' ? COLORS.navy : COLORS.white }}>
+                {step === 'input' ? 'Continue' : 'Verify & Link'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
         <View style={{ height: Platform.OS === 'ios' ? 40 : 20 }} />
-      </View>
+      </KeyboardAwareScrollView>
     );
   };
 

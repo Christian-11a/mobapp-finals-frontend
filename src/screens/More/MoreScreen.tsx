@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -148,8 +148,12 @@ export default function MoreScreen() {
         <Text style={styles.headerTitle}>Profile</Text>
         
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+          <View style={[styles.avatar, user?.avatarUrl ? { padding: 0, overflow: 'hidden' } : null]}>
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View, StatusBar, Platform, Image, ActivityIndicator } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +17,7 @@ import { styles } from './EditProfileStyle';
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'EditProfile'> };
 
 export default function EditProfileScreen({ navigation }: Props) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { showToast } = useToast();
 
   const isAdmin = user?.role === 'admin';
@@ -38,7 +39,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -87,18 +88,18 @@ export default function EditProfileScreen({ navigation }: Props) {
         finalAvatarUrl = await userService.uploadAvatar(user.id, avatarUri);
       }
 
-      const updatedData: any = { 
+      const updatedData: Partial<UserType> = { 
         firstName: firstName.trim(), 
         lastName: lastName.trim(), 
         email: email.trim(),
         phoneNumber: phone.trim()
       };
 
-      if (finalAvatarUrl !== undefined) {
+      if (finalAvatarUrl) {
         updatedData.avatarUrl = finalAvatarUrl;
       }
 
-      await userService.updateProfile(user.id, updatedData);
+      await updateUser(updatedData);
       showToast(isAdmin ? 'Admin profile updated.' : VALIDATION.PROFILE_UPDATED, 'success');
       navigation.goBack();
     } catch (err: any) {
@@ -161,13 +162,14 @@ export default function EditProfileScreen({ navigation }: Props) {
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
-        <StatusBar barStyle="light-content" />
-        
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <KeyboardAwareScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false} 
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerCircle1} />
@@ -233,14 +235,23 @@ export default function EditProfileScreen({ navigation }: Props) {
             {renderInput('Current Password', currentPassword, setCurrentPassword, 'lock-closed-outline', 'currentPassword', '••••••••', 'default', !showPass, true)}
           </View>
 
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
-            <Text style={styles.saveBtnText}>Save All Changes</Text>
+          <TouchableOpacity 
+            style={[styles.saveBtn, loading && { opacity: 0.7 }]} 
+            onPress={handleSave} 
+            activeOpacity={0.8}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.saveBtnText}>Save All Changes</Text>
+            )}
           </TouchableOpacity>
           
           <View style={{ height: 40 }} />
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 
