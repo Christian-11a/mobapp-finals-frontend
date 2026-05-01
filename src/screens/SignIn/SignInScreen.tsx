@@ -155,7 +155,7 @@ export default function SignInScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.createAccountContainer}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.replace('Register')}
           >
             <Text style={styles.noAccountText}>Don't have an account?</Text>
             <Text style={styles.createOneText}>Create one</Text>

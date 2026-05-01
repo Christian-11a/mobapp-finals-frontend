@@ -293,7 +293,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.signInLinkContainer}
-            onPress={() => navigation.navigate('SignIn')}
+            onPress={() => navigation.replace('SignIn')}
           >
             <Text style={styles.alreadyAccountText}>Already have an account?</Text>
             <Text style={styles.signInText}>Sign In</Text>
