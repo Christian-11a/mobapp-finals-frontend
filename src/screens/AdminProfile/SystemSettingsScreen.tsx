@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, TouchableOpacity, View, StatusBar, Platform, Switch, StyleSheet, TextInput, Modal } from 'react-native';
+import { Text, TouchableOpacity, View, StatusBar, Platform, Switch, StyleSheet, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -182,9 +182,11 @@ export default function SystemSettingsScreen() {
             onPress={handleSave}
             disabled={isSaving}
           >
-            <Text style={itemStyles.saveBtnText}>
-              {isSaving ? 'Applying Settings...' : 'Apply Global Settings'}
-            </Text>
+            {isSaving ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={itemStyles.saveBtnText}>Apply Global Settings</Text>
+            )}
           </TouchableOpacity>
         </View>
         <View style={{ height: 40 }} />
