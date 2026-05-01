@@ -16,6 +16,7 @@ import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './styles';
 import { COLORS } from '../../constants/colors';
+import { formatPrice } from '../../utils/formatUtils';
 import { useBookings } from '../../context/BookingContext';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -186,7 +187,7 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.totalCard}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>${totalPrice.toFixed(0)}</Text>
+            <Text style={styles.totalValue}>${formatPrice(totalPrice)}</Text>
           </View>
           <Text style={styles.taxNote}>Pay with secured {useSaved ? selectedMethod?.type.toUpperCase() : 'Card'}</Text>
         </View>
@@ -304,7 +305,7 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
                     secureTextEntry
                     maxLength={3}
                     value={cvv}
-                    onChangeText={setCvv}
+                    onChangeText={(text) => setCvv(text.replace(/[^0-9]/g, ''))}
                   />
                 </View>
               </View>
@@ -328,7 +329,7 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
           disabled={loading}
         >
           <Text style={styles.payButtonText}>
-            {loading ? 'Processing...' : `Pay $${totalPrice.toFixed(0)}`}
+            {loading ? 'Processing...' : `Pay $${formatPrice(totalPrice)}`}
           </Text>
         </TouchableOpacity>
       </View>
