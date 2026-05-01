@@ -1,6 +1,6 @@
-import storage from '@react-native-firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { roomRepository } from '../repositories/roomRepository';
+import { cloudinaryService } from './cloudinaryService';
 import { Room } from '../types';
 
 export const roomService = {
@@ -56,8 +56,8 @@ export const roomService = {
   },
 
   /**
-   * Compresses and uploads a room photo using Native Firebase Storage.
-   * Native SDK is much more stable for file handling in React Native.
+   * Compresses and uploads a room photo to Cloudinary.
+   * This is compatible with Expo Go and avoids native Firebase Storage issues.
    */
   uploadRoomPhoto: async (roomId: string, localUri: string): Promise<string> => {
     try {
@@ -68,17 +68,8 @@ export const roomService = {
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      // 2. Prepare storage reference (Native SDK)
-      const filename = `${Date.now()}.jpg`;
-      const reference = storage().ref(`rooms/${roomId}/${filename}`);
-
-      // 3. Upload file directly from URI (Native putFile)
-      // On some platforms, we need to remove the 'file://' prefix
-      const uploadPath = manipResult.uri.replace('file://', '');
-      await reference.putFile(uploadPath);
-
-      // 4. Get and return download URL
-      return await reference.getDownloadURL();
+      // 2. Upload to Cloudinary using existing service
+      return await cloudinaryService.uploadImage(manipResult.uri, 'rooms');
     } catch (error: any) {
       console.error('Error uploading room photo:', error);
       throw new Error(`Failed to upload room photo: ${error.message || 'Unknown error'}`);
