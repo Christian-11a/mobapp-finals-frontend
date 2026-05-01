@@ -213,10 +213,6 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: COLORS.white,
     paddingHorizontal: 20,
     paddingTop: 15,

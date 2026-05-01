@@ -1,7 +1,7 @@
 import { doc, updateDoc, arrayUnion, arrayRemove, runTransaction } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import storage from '@react-native-firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { db, storage } from '../config/firebase';
+import { db } from '../config/firebase';
 import { UserType, PaymentMethod, NotificationSettings } from '../types';
 
 export const userService = {
@@ -95,7 +95,7 @@ export const userService = {
   },
 
   /**
-   * Uploads and compresses a profile avatar
+   * Uploads and compresses a profile avatar using Native Firebase Storage.
    */
   uploadAvatar: async (uid: string, localUri: string): Promise<string> => {
     try {
@@ -105,15 +105,16 @@ export const userService = {
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      const storageRef = ref(storage, `avatars/${uid}.jpg`);
-      const response = await fetch(manipResult.uri);
-      const blob = await response.blob();
+      const reference = storage().ref(`avatars/${uid}.jpg`);
+      
+      // Upload file directly from URI
+      const uploadPath = manipResult.uri.replace('file://', '');
+      await reference.putFile(uploadPath);
 
-      await uploadBytes(storageRef, blob);
-      return await getDownloadURL(storageRef);
-    } catch (error) {
+      return await reference.getDownloadURL();
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      throw new Error('Failed to upload profile picture.');
+      throw new Error(`Failed to upload profile picture: ${error.message || 'Unknown error'}`);
     }
   }
 };

@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Image,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
@@ -10,6 +9,7 @@ import {
   View,
   Modal,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { MaskedTextInput } from 'react-native-mask-text';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -40,6 +40,19 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(defaultMethod || null);
   const [useSaved, setUseSaved] = useState(savedMethods.length > 0);
   const [isChangeModalVisible, setIsChangeModalVisible] = useState(false);
+
+  // Sync state when saved methods change (e.g. user added one in manage screen)
+  useEffect(() => {
+    if (savedMethods.length > 0) {
+      if (!selectedMethod || !savedMethods.find(m => m.id === selectedMethod.id)) {
+        setSelectedMethod(defaultMethod);
+        setUseSaved(true);
+      }
+    } else {
+      setUseSaved(false);
+      setSelectedMethod(null);
+    }
+  }, [savedMethods, defaultMethod]);
 
   // Manual Form states
   const [cardNumber, setCardNumber] = useState('');
@@ -130,10 +143,7 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -166,7 +176,12 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={20}
+      >
         {/* Total Card */}
         <View style={styles.totalCard}>
           <View style={styles.totalRow}>
@@ -303,8 +318,8 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
             </Text>
           </View>
         </View>
-        <View style={{ height: 100 }} />
-      </ScrollView>
+        <View style={{ height: 40 }} />
+      </KeyboardAwareScrollView>
 
       <View style={styles.bottomBar}>
         <TouchableOpacity
@@ -347,7 +362,7 @@ const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

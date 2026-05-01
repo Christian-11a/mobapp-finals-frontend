@@ -3,6 +3,7 @@ import {
   FlatList, ScrollView, Text, TextInput,
   TouchableOpacity, View, Image, Modal,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookings } from '../../context/BookingContext';
 import { useRooms } from '../../context/RoomContext';
@@ -305,15 +306,20 @@ export default function AdminReviewModerationScreen() {
               <Text style={styles.modalTitle}>Official Response</Text>
               <TouchableOpacity onPress={() => setReplyModalVisible(false)}><Ionicons name="close" size={24} color={COLORS.navy} /></TouchableOpacity>
             </View>
-            <TextInput
-              style={styles.replyInput}
-              placeholder="Write a professional response..."
-              multiline
-              value={replyText}
-              onChangeText={setReplyText}
-              placeholderTextColor={COLORS.gray400}
-            />
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleSendReply}><Text style={styles.confirmBtnText}>Publish Response</Text></TouchableOpacity>
+            <KeyboardAwareScrollView 
+              contentContainerStyle={{ padding: 20 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Write a professional response..."
+                multiline
+                value={replyText}
+                onChangeText={setReplyText}
+                placeholderTextColor={COLORS.gray400}
+              />
+              <TouchableOpacity style={styles.confirmBtn} onPress={handleSendReply}><Text style={styles.confirmBtnText}>Publish Response</Text></TouchableOpacity>
+            </KeyboardAwareScrollView>
           </View>
         </View>
       </Modal>

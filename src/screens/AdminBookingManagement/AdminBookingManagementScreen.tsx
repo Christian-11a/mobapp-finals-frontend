@@ -131,6 +131,7 @@ export default function AdminBookingManagementScreen() {
           data={filteredBookings}
           keyExtractor={b => b.id}
           contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="calendar-outline" size={64} color={COLORS.gray200} />

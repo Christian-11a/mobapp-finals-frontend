@@ -1,7 +1,6 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import storage from '@react-native-firebase/storage';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { roomRepository } from '../repositories/roomRepository';
-import { storage } from '../config/firebase';
 import { Room } from '../types';
 
 export const roomService = {
@@ -57,33 +56,32 @@ export const roomService = {
   },
 
   /**
-   * Compresses and uploads a room photo to Firebase Storage
+   * Compresses and uploads a room photo using Native Firebase Storage.
+   * Native SDK is much more stable for file handling in React Native.
    */
   uploadRoomPhoto: async (roomId: string, localUri: string): Promise<string> => {
     try {
-      // 1. Compress and resize image (max 1MB goal)
+      // 1. Compress and resize image
       const manipResult = await ImageManipulator.manipulateAsync(
         localUri,
         [{ resize: { width: 1200 } }],
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      // 2. Prepare storage reference
+      // 2. Prepare storage reference (Native SDK)
       const filename = `${Date.now()}.jpg`;
-      const storageRef = ref(storage, `rooms/${roomId}/${filename}`);
+      const reference = storage().ref(`rooms/${roomId}/${filename}`);
 
-      // 3. Convert uri to blob
-      const response = await fetch(manipResult.uri);
-      const blob = await response.blob();
+      // 3. Upload file directly from URI (Native putFile)
+      // On some platforms, we need to remove the 'file://' prefix
+      const uploadPath = manipResult.uri.replace('file://', '');
+      await reference.putFile(uploadPath);
 
-      // 4. Upload to Firebase Storage
-      await uploadBytes(storageRef, blob);
-
-      // 5. Get and return download URL
-      return await getDownloadURL(storageRef);
-    } catch (error) {
+      // 4. Get and return download URL
+      return await reference.getDownloadURL();
+    } catch (error: any) {
       console.error('Error uploading room photo:', error);
-      throw new Error('Failed to upload room photo. Please try again.');
+      throw new Error(`Failed to upload room photo: ${error.message || 'Unknown error'}`);
     }
   }
 };

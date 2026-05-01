@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { 
+  ScrollView, 
+  Text, 
+  TouchableOpacity, 
+  View, 
+  StatusBar, 
+  Alert, 
+  Modal, 
+  TextInput, 
+  ActivityIndicator, 
+  Platform, 
+  StyleSheet 
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -170,7 +183,11 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={{ padding: 24 }}>
+      <KeyboardAwareScrollView 
+        contentContainerStyle={{ padding: 24 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         <View style={{ width: 40, height: 4, backgroundColor: COLORS.gray200, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
         
         {/* Header Label */}
@@ -293,7 +310,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
         <View style={{ height: Platform.OS === 'ios' ? 40 : 20 }} />
-      </View>
+      </KeyboardAwareScrollView>
     );
   };
 

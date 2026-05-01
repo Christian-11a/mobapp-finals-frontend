@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Image, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -478,44 +479,49 @@ export default function BookingDetailScreen({ navigation, route }: Props) {
       {/* Review Modal */}
       <Modal visible={reviewModal} transparent animationType="slide" statusBarTranslucent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { maxHeight: '80%' }]}>
             <Text style={styles.modalTitle}>Leave a Review</Text>
 
-            <Text style={styles.modalLabel}>Your Rating</Text>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <TouchableOpacity key={i} onPress={() => { setRating(i); setRatingErr(''); }}>
-                  <Ionicons
-                    name={i <= rating ? 'star' : 'star-outline'}
-                    size={36}
-                    color={COLORS.gold}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-            {!!ratingErr && <Text style={styles.modalError}>{ratingErr}</Text>}
-
-            <Text style={[styles.modalLabel, { marginTop: 12 }]}>Your Review</Text>
-            <TextInput
-              style={[styles.modalInput, !!textErr && styles.modalInputError]}
-              value={reviewText}
-              onChangeText={v => { setReviewText(v); setTextErr(''); }}
-              placeholder="Share your experience (min 10 characters)..."
-              placeholderTextColor={COLORS.gray400}
-              multiline
-              numberOfLines={4}
-            />
-            {!!textErr && <Text style={styles.modalError}>{textErr}</Text>}
-
-            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSubmitReview}>
-              <Text style={styles.modalSaveBtnText}>Submit Review</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
-              onPress={() => { setReviewModal(false); setRating(0); setReviewText(''); setRatingErr(''); setTextErr(''); }}
+            <KeyboardAwareScrollView 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.modalCancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
+              <Text style={styles.modalLabel}>Your Rating</Text>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <TouchableOpacity key={i} onPress={() => { setRating(i); setRatingErr(''); }}>
+                    <Ionicons
+                      name={i <= rating ? 'star' : 'star-outline'}
+                      size={36}
+                      color={COLORS.gold}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {!!ratingErr && <Text style={styles.modalError}>{ratingErr}</Text>}
+
+              <Text style={[styles.modalLabel, { marginTop: 12 }]}>Your Review</Text>
+              <TextInput
+                style={[styles.modalInput, !!textErr && styles.modalInputError]}
+                value={reviewText}
+                onChangeText={v => { setReviewText(v); setTextErr(''); }}
+                placeholder="Share your experience (min 10 characters)..."
+                placeholderTextColor={COLORS.gray400}
+                multiline
+                numberOfLines={4}
+              />
+              {!!textErr && <Text style={styles.modalError}>{textErr}</Text>}
+
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSubmitReview}>
+                <Text style={styles.modalSaveBtnText}>Submit Review</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => { setReviewModal(false); setRating(0); setReviewText(''); setRatingErr(''); setTextErr(''); }}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </KeyboardAwareScrollView>
           </View>
         </View>
       </Modal>

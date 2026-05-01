@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Platform, Switch, StyleSheet, TextInput, Modal } from 'react-native';
+import { Text, TouchableOpacity, View, StatusBar, Platform, Switch, StyleSheet, TextInput, Modal } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from '../../context/ToastContext';
@@ -87,7 +88,7 @@ export default function SystemSettingsScreen() {
         value={value} 
         onValueChange={onValueChange} 
         trackColor={{ false: '#e5e7eb', true: COLORS.navy }}
-        thumbColor={Platform.OS === 'android' ? (value ? COLORS.gold : '#f3f4f6') : (value ? COLORS.white : '')}
+        thumbColor={Platform.OS === 'android' ? (value ? COLORS.gold : '#f3f4f6') : undefined}
         disabled={isSaving}
       />
     </View>
@@ -123,16 +124,16 @@ export default function SystemSettingsScreen() {
         </View>
       </View>
 
-      <ScrollView style={itemStyles.scroll} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView style={itemStyles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={{ padding: 20 }}>
           
           {renderSection('Property Configuration', (
             <>
               {renderInput('Hotel Name', hotelName, setHotelName, 'Enter hotel name')}
               <View style={itemStyles.divider} />
-              {renderInput('Check-in Time', checkInTime, setCheckInTime, '14:00', 'numbers-and-punctuation')}
+              {renderInput('Check-in Time', checkInTime, setCheckInTime, '14:00', 'default')}
               <View style={itemStyles.divider} />
-              {renderInput('Check-out Time', checkOutTime, setCheckOutTime, '12:00', 'numbers-and-punctuation')}
+              {renderInput('Check-out Time', checkOutTime, setCheckOutTime, '12:00', 'default')}
             </>
           ))}
 
@@ -187,7 +188,7 @@ export default function SystemSettingsScreen() {
           </TouchableOpacity>
         </View>
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Currency Selection Modal */}
       <Modal visible={currencyModalVisible} transparent animationType="slide">

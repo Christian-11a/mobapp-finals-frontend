@@ -121,6 +121,7 @@ export default function RoomsScreen() {
         data={filtered}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.gold} colors={[COLORS.gold]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
