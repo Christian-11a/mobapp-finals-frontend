@@ -3,7 +3,7 @@ import { Animated, ViewStyle } from 'react-native';
 
 interface Props {
   width?: number | `${number}%`;
-  height?: number;
+  height?: number | `${number}%`;
   borderRadius?: number;
   style?: ViewStyle;
 }

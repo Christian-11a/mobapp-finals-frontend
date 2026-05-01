@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,6 @@ import { useToast } from '../../context/ToastContext';
 import { userService } from '../../services/userService';
 import { COLORS } from '../../constants/colors';
 import { RootStackParamList, PaymentMethod } from '../../types';
-import { MaskedTextInput } from 'react-native-mask-text';
 import styles from './styles';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'PaymentMethods'> };
@@ -39,6 +38,24 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     setFlowVisible(true);
   };
 
+  const formatCardNumber = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    let formatted = '';
+    for (let i = 0; i < cleaned.length; i++) {
+      if (i > 0 && i % 4 === 0) formatted += ' ';
+      formatted += cleaned[i];
+    }
+    return formatted.slice(0, 19);
+  };
+
+  const formatExpiry = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    if (cleaned.length >= 3) {
+      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+    }
+    return cleaned;
+  };
+
   const handleNextStep = () => {
     if (activeFlow === 'gcash' || activeFlow === 'maya') {
       if (step === 'input') setStep('otp');
@@ -47,7 +64,8 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     } else {
       if (step === 'input') {
         setStep('loading');
-        setTimeout(() => setStep('otp'), 1500); // Simulate bank redirect
+        // Skip OTP for cards as per request
+        setTimeout(() => finalizeLinking(), 1500); 
       } else if (step === 'otp') finalizeLinking();
     }
   };
@@ -60,10 +78,13 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
       const newMethod: PaymentMethod = {
         id: `m_${Date.now()}`,
         type: activeFlow!,
-        label: activeFlow === 'card' ? `•••• ${cardNum.slice(-4)}` : phone,
+        label: activeFlow === 'card' ? `•••• ${cardNum.replace(/\s/g, '').slice(-4)}` : phone,
         isDefault: methods.length === 0,
-        provider: activeFlow === 'card' ? (cardNum.startsWith('4') ? 'Visa' : 'Mastercard') : undefined
       };
+
+      if (activeFlow === 'card') {
+        newMethod.provider = cardNum.startsWith('4') ? 'Visa' : 'Mastercard';
+      }
 
       await userService.addPaymentMethod(user.id, newMethod);
       setStep('success');
@@ -173,19 +194,26 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
           <View style={{ gap: 16 }}>
             <View>
               <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.gray400, marginBottom: 8 }}>CARD NUMBER</Text>
-              <MaskedTextInput
-                mask="9999 9999 9999 9999"
+              <TextInput
                 style={formStyles.input}
                 placeholder="0000 0000 0000 0000"
                 keyboardType="numeric"
                 value={cardNum}
-                onChangeText={setCardNum}
+                onChangeText={(t) => setCardNum(formatCardNumber(t))}
+                maxLength={19}
               />
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.gray400, marginBottom: 8 }}>EXPIRY</Text>
-                <MaskedTextInput mask="99/99" style={formStyles.input} placeholder="MM/YY" keyboardType="numeric" value={expiry} onChangeText={setExpiry} />
+                <TextInput 
+                  style={formStyles.input} 
+                  placeholder="MM/YY" 
+                  keyboardType="numeric" 
+                  value={expiry} 
+                  onChangeText={(t) => setExpiry(formatExpiry(t))}
+                  maxLength={5}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.gray400, marginBottom: 8 }}>CVV</Text>
@@ -198,13 +226,13 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
         {(activeFlow === 'gcash' || activeFlow === 'maya') && step === 'input' && (
           <View>
             <Text style={{ fontSize: 12, fontWeight: 'bold', color: COLORS.gray400, marginBottom: 8 }}>MOBILE NUMBER</Text>
-            <MaskedTextInput
-              mask="9999 999 9999"
+            <TextInput
               style={formStyles.input}
               placeholder="09XX XXX XXXX"
               keyboardType="numeric"
               value={phone}
               onChangeText={setPhone}
+              maxLength={11}
             />
             <Text style={{ marginTop: 12, fontSize: 12, color: COLORS.gray500, lineHeight: 18 }}>
               We'll send a code to this number to verify your ownership of this {activeFlow} account.
@@ -217,13 +245,13 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
             <Text style={{ textAlign: 'center', color: COLORS.navy, fontWeight: '600', marginBottom: 16 }}>
               Enter the 6-digit code sent to your number
             </Text>
-            <MaskedTextInput
-              mask="999 999"
+            <TextInput
               style={[formStyles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
-              placeholder="000 000"
+              placeholder="000000"
               keyboardType="numeric"
               value={otp}
               onChangeText={setOtp}
+              maxLength={6}
               autoFocus
             />
             <TouchableOpacity style={{ marginTop: 20 }}>

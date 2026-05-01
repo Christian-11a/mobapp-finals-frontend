@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, StatusBar, Image, Platform, StyleSheet, ActivityIndicator } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, StatusBar, Image, Platform, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -23,19 +23,39 @@ export default function SavedRoomsScreen() {
     if (!user) return;
     const isSaved = savedIds.includes(roomId);
     
-    setLoading(roomId);
-    try {
-      if (isSaved) {
-        await userService.unsaveRoom(user.id, roomId);
-        showToast('Room removed from wishlist', 'info', 'bottom');
-      } else {
+    if (isSaved) {
+      Alert.alert(
+        'Remove from Wishlist',
+        'Do you want to remove this from your wishlist?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Remove', 
+            style: 'destructive', 
+            onPress: async () => {
+              setLoading(roomId);
+              try {
+                await userService.unsaveRoom(user.id, roomId);
+                showToast('Room removed from wishlist', 'info', 'bottom');
+              } catch (error) {
+                showToast('Action failed. Please try again.', 'error');
+              } finally {
+                setLoading(null);
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      setLoading(roomId);
+      try {
         await userService.saveRoom(user.id, roomId);
         showToast('Room saved to wishlist!', 'success', 'bottom');
+      } catch (error) {
+        showToast('Action failed. Please try again.', 'error');
+      } finally {
+        setLoading(null);
       }
-    } catch (error) {
-      showToast('Action failed. Please try again.', 'error');
-    } finally {
-      setLoading(null);
     }
   };
 

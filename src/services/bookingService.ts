@@ -142,6 +142,20 @@ export const bookingService = {
    * Approves a pending booking (admin only)
    */
   approveBooking: async (bookingId: string): Promise<void> => {
+    const booking = await bookingRepository.getBookingById(bookingId);
+    if (!booking) throw new Error('Booking not found');
+
+    const isAvailable = await bookingRepository.checkRoomAvailability(
+      booking.room.id,
+      booking.checkInDate,
+      booking.checkOutDate,
+      bookingId
+    );
+
+    if (!isAvailable) {
+      throw new DomainError('DOUBLE_BOOKING');
+    }
+
     await bookingRepository.updateBooking(bookingId, { status: 'Confirmed' });
   },
 
@@ -149,6 +163,21 @@ export const bookingService = {
    * Updates booking status (admin only)
    */
   updateBookingStatus: async (bookingId: string, status: Booking['status']): Promise<void> => {
+    if (status === 'Confirmed') {
+      const booking = await bookingRepository.getBookingById(bookingId);
+      if (!booking) throw new Error('Booking not found');
+
+      const isAvailable = await bookingRepository.checkRoomAvailability(
+        booking.room.id,
+        booking.checkInDate,
+        booking.checkOutDate,
+        bookingId
+      );
+
+      if (!isAvailable) {
+        throw new DomainError('DOUBLE_BOOKING');
+      }
+    }
     await bookingRepository.updateBooking(bookingId, { status });
   },
 

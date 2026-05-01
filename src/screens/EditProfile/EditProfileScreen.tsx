@@ -87,13 +87,16 @@ export default function EditProfileScreen({ navigation }: Props) {
         finalAvatarUrl = await userService.uploadAvatar(user.id, avatarUri);
       }
 
-      const updatedData = { 
+      const updatedData: any = { 
         firstName: firstName.trim(), 
         lastName: lastName.trim(), 
         email: email.trim(),
-        phoneNumber: phone.trim(),
-        avatarUrl: finalAvatarUrl
+        phoneNumber: phone.trim()
       };
+
+      if (finalAvatarUrl !== undefined) {
+        updatedData.avatarUrl = finalAvatarUrl;
+      }
 
       await userService.updateProfile(user.id, updatedData);
       showToast(isAdmin ? 'Admin profile updated.' : VALIDATION.PROFILE_UPDATED, 'success');

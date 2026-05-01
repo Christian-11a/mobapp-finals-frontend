@@ -47,8 +47,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const updateSettings = async (updates: Partial<NotificationSettings>) => {
     if (!user) return;
     const newSettings = { 
-      push: { ...settings.push, ...updates.push },
-      email: { ...settings.email, ...updates.email }
+      push: { ...settings.push, ...(updates.push || {}) },
+      email: { ...settings.email, ...(updates.email || {}) }
     };
     await userService.updateNotificationSettings(user.id, newSettings);
   };
