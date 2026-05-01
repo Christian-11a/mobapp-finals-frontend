@@ -3,6 +3,7 @@ import {
   FlatList, Modal, ScrollView, Switch, Text, TextInput,
   TouchableOpacity, View, Image, ActivityIndicator
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRooms } from '../../context/RoomContext';
@@ -135,7 +136,7 @@ export default function AdminRoomManagementScreen() {
     
     setLoading(true);
     try {
-      const roomData = {
+      const roomData: any = {
         title: form.title.trim(),
         type: form.type,
         pricePerNight: Number(form.pricePerNight),
@@ -143,9 +144,17 @@ export default function AdminRoomManagementScreen() {
         description: form.description.trim(),
         isAvailable: form.isAvailable,
         amenities: form.selectedAmenities,
-        photos: editingRoom?.photos ?? [],
-        thumbnailPic: editingRoom?.thumbnailPic,
       };
+
+      // Only include thumbnailPic and photos if they exist to avoid 'undefined' errors in Firestore
+      if (editingRoom?.thumbnailPic) {
+        roomData.thumbnailPic = editingRoom.thumbnailPic;
+      }
+      if (editingRoom?.photos) {
+        roomData.photos = editingRoom.photos;
+      } else {
+        roomData.photos = [];
+      }
 
       let roomId = editingRoom?.id;
       if (editingRoom) {
@@ -296,7 +305,11 @@ export default function AdminRoomManagementScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalBody}>
+            <KeyboardAwareScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={styles.modalBody}
+              keyboardShouldPersistTaps="handled"
+            >
               {/* Photo Upload */}
               <Text style={styles.label}>Room Photo</Text>
               <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
@@ -404,10 +417,18 @@ export default function AdminRoomManagementScreen() {
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>{editingRoom ? 'Update Room' : 'Create Room'}</Text>
+              <TouchableOpacity 
+                style={[styles.saveButton, loading && { opacity: 0.7 }]} 
+                onPress={handleSave}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>{editingRoom ? 'Update Room' : 'Create Room'}</Text>
+                )}
               </TouchableOpacity>
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </View>
         </View>
       </Modal>
@@ -421,6 +442,7 @@ export default function AdminRoomManagementScreen() {
         cancelText="Cancel"
         confirmColor={COLORS.red}
         icon="trash-outline"
+        isLoading={loading}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
